@@ -1,26 +1,99 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    @apply bg-bg-light dark:bg-bg-dark text-text-primary-light dark:text-text-primary-dark;
+    @apply font-sans antialiased;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Focus visible states for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-teal-500 ring-offset-2;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Card component */
+  .card {
+    @apply bg-card-light dark:bg-card-dark rounded-card shadow-card;
+    @apply p-8;
+  }
+
+  /* Input field */
+  .input {
+    @apply w-full px-4 py-3 rounded-input;
+    @apply border-2 border-border-light dark:border-border-dark;
+    @apply bg-white dark:bg-bg-dark;
+    @apply text-text-primary-light dark:text-text-primary-dark;
+    @apply transition-all duration-200;
+  }
+
+  .input:focus {
+    @apply border-teal-500 shadow-glow;
+  }
+
+  .input::placeholder {
+    @apply text-text-secondary;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply w-full h-12 rounded-button;
+    @apply bg-teal-500 hover:bg-teal-600;
+    @apply text-white font-semibold text-base;
+    @apply transition-all duration-200;
+    @apply shadow-subtle hover:shadow-card;
+  }
+
+  .btn-primary:hover {
+    @apply -translate-y-0.5;
+  }
+
+  .btn-primary:active {
+    @apply translate-y-0;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply px-6 py-2 rounded-button;
+    @apply text-teal-500 hover:text-teal-600;
+    @apply font-medium;
+    @apply transition-colors duration-200;
+  }
+
+  /* Label */
+  .label {
+    @apply block text-sm font-medium text-text-secondary mb-2;
+    @apply tracking-wide;
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/40 backdrop-blur-sm;
+    @apply flex items-center justify-center;
+    @apply z-50;
+  }
+}
+
+@layer utilities {
+  /* Timer specific styling */
+  .timer-display {
+    @apply font-mono text-7xl md:text-8xl font-medium;
+    @apply text-teal-500 dark:text-teal-dark;
+    @apply tracking-wider;
+  }
+
+  /* Focus score number */
+  .score-display {
+    @apply text-5xl font-bold text-teal-500;
+  }
+
+  /* Transition utilities */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
 }
