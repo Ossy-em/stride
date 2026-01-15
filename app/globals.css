@@ -1,99 +1,222 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-bg-light dark:bg-bg-dark text-text-primary-light dark:text-text-primary-dark;
-    @apply font-sans antialiased;
-  }
-
-  /* Focus visible states for accessibility */
-  *:focus-visible {
-    @apply outline-none ring-2 ring-teal-500 ring-offset-2;
-  }
+/* Base Styles */
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #FAFAF9;
+  color: #1F2937;
 }
 
-@layer components {
-  /* Card component */
-  .card {
-    @apply bg-card-light dark:bg-card-dark rounded-card shadow-card;
-    @apply p-8;
-  }
-
-  /* Input field */
-  .input {
-    @apply w-full px-4 py-3 rounded-input;
-    @apply border-2 border-border-light dark:border-border-dark;
-    @apply bg-white dark:bg-bg-dark;
-    @apply text-text-primary-light dark:text-text-primary-dark;
-    @apply transition-all duration-200;
-  }
-
-  .input:focus {
-    @apply border-teal-500 shadow-glow;
-  }
-
-  .input::placeholder {
-    @apply text-text-secondary;
-  }
-
-  /* Primary button */
-  .btn-primary {
-    @apply w-full h-12 rounded-button;
-    @apply bg-teal-500 hover:bg-teal-600;
-    @apply text-white font-semibold text-base;
-    @apply transition-all duration-200;
-    @apply shadow-subtle hover:shadow-card;
-  }
-
-  .btn-primary:hover {
-    @apply -translate-y-0.5;
-  }
-
-  .btn-primary:active {
-    @apply translate-y-0;
-  }
-
-  /* Ghost button */
-  .btn-ghost {
-    @apply px-6 py-2 rounded-button;
-    @apply text-teal-500 hover:text-teal-600;
-    @apply font-medium;
-    @apply transition-colors duration-200;
-  }
-
-  /* Label */
-  .label {
-    @apply block text-sm font-medium text-text-secondary mb-2;
-    @apply tracking-wide;
-  }
-
-  /* Modal backdrop */
-  .modal-backdrop {
-    @apply fixed inset-0 bg-black/40 backdrop-blur-sm;
-    @apply flex items-center justify-center;
-    @apply z-50;
-  }
+.dark body {
+  background-color: #1A1A1A;
+  color: #F3F4F6;
 }
 
-@layer utilities {
-  /* Timer specific styling */
+/* Focus visible states */
+*:focus-visible {
+  outline: 2px solid #0D7377;
+  outline-offset: 2px;
+}
+
+/* Card Component */
+.card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card {
+  background-color: #242424;
+}
+
+/* Input Field */
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 2px solid #E5E7EB;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  transition: all 0.2s;
+}
+
+.dark .input {
+  border-color: #374151;
+  background-color: #1A1A1A;
+  color: #F3F4F6;
+}
+
+.input:focus {
+  border-color: #0D7377;
+  box-shadow: 0 0 6px rgba(13, 115, 119, 0.2);
+  outline: none;
+}
+
+.input::placeholder {
+  color: #6B7280;
+}
+
+/* Primary Button */
+.btn-primary {
+  width: 100%;
+  height: 3rem;
+  border-radius: 12px;
+  background-color: #0D7377;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #0A5C5F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ghost Button */
+.btn-ghost {
+  padding: 0.5rem 1.5rem;
+  border-radius: 12px;
+  color: #0D7377;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btn-ghost:hover {
+  color: #0A5C5F;
+}
+
+/* Label */
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.025em;
+  color: #6B7280;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+/* Timer Display */
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 4.5rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #0D7377;
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+.dark .timer-display {
+  color: #1BA098;
+}
+
+@media (min-width: 768px) {
   .timer-display {
-    @apply font-mono text-7xl md:text-8xl font-medium;
-    @apply text-teal-500 dark:text-teal-dark;
-    @apply tracking-wider;
+    font-size: 6rem;
   }
+}
 
-  /* Focus score number */
-  .score-display {
-    @apply text-5xl font-bold text-teal-500;
-  }
+/* Focus Score */
+.score-display {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #0D7377;
+}
 
-  /* Transition utilities */
-  .transition-smooth {
-    @apply transition-all duration-300 ease-out;
+/* Animations */
+@keyframes pulse-gentle {
+  0%, 100% {
+    transform: scale(1);
   }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 300ms ease-out;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+/* Timer Page Background */
+.timer-bg {
+  background-color: #F0F9F9;
+}
+
+.dark .timer-bg {
+  background-color: #0A2C2E;
+}
+
+/* Utilities */
+.transition-smooth {
+  transition: all 300ms ease-out;
+}
+
+.text-secondary {
+  color: #6B7280;
+}
+
+/* Responsive text colors */
+.dark .text-secondary {
+  color: #9CA3AF;
 }
