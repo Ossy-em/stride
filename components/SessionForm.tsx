@@ -64,16 +64,16 @@ export default function SessionForm() {
           <label htmlFor="taskType" className="label">
             Task Type
           </label>
-          <select
-            id="taskType"
-            className="input cursor-pointer"
-            value={formData.taskType}
-            onChange={(e) => setFormData({ ...formData, taskType: e.target.value as TaskType })}
-          >
-            <option value="coding">Coding</option>
-            <option value="writing">Writing</option>
-            <option value="reading">Reading</option>
-          </select>
+        <select
+  id="taskType"
+  className="input cursor-pointer"
+  value={formData.taskType}
+  onChange={(e) => setFormData({ ...formData, taskType: e.target.value as TaskType })}
+>
+  <option value="coding">Development & Technical Work</option>
+  <option value="writing">Writing & Creative Work</option>
+  <option value="reading">Reading & Learning</option>
+</select>
         </div>
 
    
