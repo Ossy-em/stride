@@ -20,7 +20,7 @@ export default function ActiveTimer({
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [lastCheckInTime, setLastCheckInTime] = useState(0);
 
-  const CHECK_IN_INTERVAL = 20 * 60; // 20 minutes in seconds
+  const CHECK_IN_INTERVAL = 20 * 60; 
 
   // Timer logic
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function ActiveTimer({
   const remainingFormatted = formatTime(remainingSeconds);
 
   const handleEndSession = () => {
-    // Navigate to end session modal
+
     router.push(`/session/end?id=${sessionId}`);
   };
 
@@ -61,7 +61,7 @@ export default function ActiveTimer({
     <>
      <div className="min-h-screen flex flex-col items-center justify-center timer-bg transition-smooth">
 
-        {/* Task Description */}
+   
         <div className="text-center mb-12">
           <p className="text-text-secondary text-sm uppercase tracking-wide mb-2">
             Current Task
@@ -80,10 +80,10 @@ export default function ActiveTimer({
           </p>
         </div>
 
-        {/* End Session Button */}
+ 
         <button
           onClick={handleEndSession}
-          className="mt-16 px-8 py-3 rounded-button bg-white dark:bg-card-dark text-teal-500 font-medium hover:shadow-card transition-smooth"
+          className="mt-16 px-8 py-3 cursor-pointer rounded-button bg-white dark:bg-card-dark text-teal-500 font-medium hover:shadow-card transition-smooth"
         >
           End Session
         </button>
