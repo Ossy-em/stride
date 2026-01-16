@@ -31,7 +31,6 @@ export default function CheckInModal({ sessionId, onClose }: CheckInModalProps) 
 
       if (!response.ok) throw new Error('Failed to save check-in');
 
-      // Close modal with brief success indication
       setTimeout(onClose, 300);
     } catch (error) {
       console.error('Error saving check-in:', error);
@@ -54,7 +53,7 @@ export default function CheckInModal({ sessionId, onClose }: CheckInModalProps) 
       >
         <h2 className="text-xl font-semibold mb-6">Quick Check</h2>
 
-        {/* Emoji Buttons */}
+    
         <div className="flex justify-center gap-4 mb-6">
           {responses.map(({ value, emoji, label }) => (
           <button
@@ -89,7 +88,7 @@ export default function CheckInModal({ sessionId, onClose }: CheckInModalProps) 
           ))}
         </div>
 
-        {/* Optional Note */}
+   
         <input
           type="text"
           className="input mb-6"
@@ -99,7 +98,7 @@ export default function CheckInModal({ sessionId, onClose }: CheckInModalProps) 
           maxLength={100}
         />
 
-        {/* Action Buttons */}
+ 
         <div className="flex gap-3">
           <button
             onClick={onClose}

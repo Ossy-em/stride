@@ -1,12 +1,12 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import ActiveTimer from '@/components/ActiveTimer';
+import EndSessionModal from '@/components/EndSessionModal';
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;
 }
 
-export default async function ActiveSessionPage({ searchParams }: PageProps) {
+export default async function EndSessionPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const sessionId = params.id;
 
@@ -26,11 +26,21 @@ export default async function ActiveSessionPage({ searchParams }: PageProps) {
     notFound();
   }
 
+  // Check if session already ended
+  if (session.ended_at) {
+    redirect('/dashboard');
+  }
+
+  // Calculate elapsed time
+  const startTime = new Date(session.started_at).getTime();
+  const now = Date.now();
+  const elapsedMinutes = Math.round((now - startTime) / 1000 / 60);
+
   return (
-    <ActiveTimer
+    <EndSessionModal
       sessionId={session.id}
       taskDescription={session.task_description}
-      plannedDuration={session.planned_duration}
+      elapsedMinutes={elapsedMinutes}
     />
   );
 }
