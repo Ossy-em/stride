@@ -25,10 +25,7 @@ export default function SessionForm() {
       });
 
       if (!response.ok) throw new Error('Failed to start session');
-
       const { sessionId } = await response.json();
-      
-      // Redirect to active timer with session ID
       router.push(`/session/active?id=${sessionId}`);
     } catch (error) {
       console.error('Error starting session:', error);
@@ -44,7 +41,7 @@ export default function SessionForm() {
   Start Focus Session
 </h1>
 
-        {/* Task Description */}
+      
         <div className="mb-6">
           <label htmlFor="task" className="label">
             What will you work on?
@@ -62,7 +59,7 @@ export default function SessionForm() {
           />
         </div>
 
-        {/* Task Type */}
+    
         <div className="mb-6">
           <label htmlFor="taskType" className="label">
             Task Type
@@ -79,7 +76,7 @@ export default function SessionForm() {
           </select>
         </div>
 
-        {/* Duration */}
+   
         <div className="mb-8">
           <label htmlFor="duration" className="label">
             Focus Duration
@@ -103,7 +100,7 @@ export default function SessionForm() {
           </p>
         </div>
 
-        {/* Submit Button */}
+
         <button
           type="submit"
           disabled={loading}

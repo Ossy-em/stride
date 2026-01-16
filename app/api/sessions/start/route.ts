@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const validatedData = startSessionSchema.parse(body);
 
     // TODO: Get actual user ID from auth session
-    // For now, using a mock user ID (we'll implement auth later)
+    // For now, using a mock user ID 
     const mockUserId = '00000000-0000-0000-0000-000000000001';
 
     // Create session in database
