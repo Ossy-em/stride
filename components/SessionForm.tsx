@@ -101,13 +101,20 @@ export default function SessionForm() {
         </div>
 
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Preparing...' : 'Begin Focus Session'}
-        </button>
+       <button
+  type="submit"
+  disabled={loading}
+  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  {loading ? (
+    <span className="flex items-center justify-center gap-2">
+      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      Preparing...
+    </span>
+  ) : (
+    'Begin Focus Session'
+  )}
+</button>
       </form>
     </div>
   );
