@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Updated teal spectrum (+brightness)
+       
         teal: {
           50: '#F0FDFC',
           100: '#CCFBF1',
@@ -21,9 +21,9 @@ const config: Config = {
           600: '#0D9488',
           700: '#0F766E',
           800: '#115E59',
-          dark: '#22D3BE', // Dark mode variant
+          dark: '#22D3BE', 
         },
-        // Updated amber (brighter)
+     
         amber: {
           DEFAULT: '#FBBF24',
           light: '#FDE68A',
