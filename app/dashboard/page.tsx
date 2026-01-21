@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
   
-        <div className="flex justify-between items-center mb-8">
+        {/* <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <Link 
             href="/session/start"
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
           >
             New Session
           </Link>
-        </div>
+        </div> */}
 
       
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
