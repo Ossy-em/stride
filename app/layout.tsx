@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Header from '@/components/Header'
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Stride - AI Focus Companion',
@@ -10,14 +10,15 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <body>
-        <Header />
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
-  )
+  );
 }
