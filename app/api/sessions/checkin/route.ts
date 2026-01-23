@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { getCurrentUser } from '@/lib/auth';
 
 const checkInSchema = z.object({
   sessionId: z.string().uuid(),
@@ -10,8 +11,32 @@ const checkInSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = checkInSchema.parse(body);
+
+    // Verify session belongs to this user
+    const { data: session } = await supabase
+      .from('sessions')
+      .select('user_id')
+      .eq('id', validatedData.sessionId)
+      .single();
+
+    if (session?.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
 
     const { error } = await supabase
       .from('checkins')
@@ -35,7 +60,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
+        { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
