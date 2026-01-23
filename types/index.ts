@@ -2,7 +2,7 @@ export type TaskType = 'coding' | 'writing' | 'reading';
 
 export type CheckInResponse = 'focused' | 'neutral' | 'distracted';
 
-export type InterventionStrategy = 'take_break' | 'switch_task' | 'push_through';
+export type InterventionStrategy = 'take_break' | 'switch_task' | 'push_through' | 'check_in';
 
 export interface Session {
   id: string;
