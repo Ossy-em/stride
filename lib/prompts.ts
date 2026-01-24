@@ -1,7 +1,6 @@
 import type { Session } from '@/types';
 
-// PROMPT 1: Pattern Analysis
-// Called after each session to identify user patterns
+
 export function buildPatternAnalysisPrompt(sessions: Session[]): string {
   const sessionData = sessions.map(s => ({
     task: s.task_description,
@@ -56,50 +55,73 @@ Return ONLY a JSON object with this structure:
 Be specific and data-driven. Avoid generic advice. If patterns aren't clear yet (less than 5 sessions), say so.`;
 }
 
-// PROMPT 2: Intervention Generation
-// Called when it's time to intervene during active session
 export function buildInterventionPrompt(context: {
   taskDescription: string;
   taskType: string;
   elapsedMinutes: number;
+  plannedDuration: number;
+  checkpoint: 'early' | 'mid' | 'late';
   userPatterns: string[];
   recentCheckIns: string[];
 }): string {
-  return `Generate a brief intervention message for a user currently in a focus session.
+  
+  const percentComplete = Math.round((context.elapsedMinutes / context.plannedDuration) * 100);
 
-Current Context:
-- Task: "${context.taskDescription}"
-- Task Type: ${context.taskType}
-- Elapsed Time: ${context.elapsedMinutes} minutes
-- Known Patterns: ${context.userPatterns.join('; ')}
-- Recent Check-ins: ${context.recentCheckIns.join(', ')}
+  const checkpointExamples = {
+    early: `
+Examples for EARLY checkpoint (${percentComplete}%):
+"How's your focus so far?"
+"${context.elapsedMinutes} minutes in. Still feeling sharp?"
+"Getting into the flow?"`,
+    
+    mid: `
+Examples for MID checkpoint (${percentComplete}%):
+"Halfway there, keep pushing! 👊🏼"
+"${context.elapsedMinutes} minutes down. Still locked in?"
+"You're crushing the midpoint."`,
+    
+    late: `
+Examples for LATE checkpoint (${percentComplete}%):
+"You're ${percentComplete}% into your session. Mind cracking your knuckles a bit?"
+"Almost done. Stretch your neck quick?"
+"${percentComplete}% through. Take 30 seconds to stretch your hands?"`
+  };
 
-Create a helpful, non-intrusive intervention message that:
-1. Acknowledges their current work
-2. References their specific pattern (if relevant)
-3. Suggests a concrete action
+  return `You are texting a friend who's ${context.elapsedMinutes} minutes into a ${context.plannedDuration}-minute work session.
 
-Tone Guidelines:
-- Supportive coach, not nagging reminder
-- 2-3 sentences maximum
-- Natural language, casual but respectful
-- Task-specific phrasing:
-  * Writing: "finish your thought", "wrap up this section"
-  * Reading: "mark your page", "process what you've learned"
-  * Coding: "save your work", "commit your changes"
+CHECKPOINT: ${context.checkpoint.toUpperCase()}
+Progress: ${context.elapsedMinutes}/${context.plannedDuration} mins (${percentComplete}%)
+
+${checkpointExamples[context.checkpoint]}
+
+Your message must:
+- Be 8-15 words maximum
+- Be accurate to their progress (${percentComplete}%)
+- Sound like a real person texting
+- For LATE checkpoint: suggest quick physical breaks (stretch, crack knuckles, etc.)
+- You CAN use ONE emoji if it fits (👊🏼 for motivation, not excessive)
+- NO AI words like "friend", "buddy", "pal"
+
+BAD examples (don't use):
+"Keep up the great work, friend!" (too AI)
+"You're doing amazing!" (cheesy)
+"Halfway there" when they're at 20% (wrong math)
 
 Return ONLY a JSON object:
 {
-  "message": "You've been writing for 42 minutes. Your focus typically peaks around 50 minutes. Wrap up this section, then take a 5-minute walk?",
-  "strategy": "take_break",
-  "reasoning": "User's pattern shows focus drops at 50 minutes for writing tasks"
+  "message": "Your message here",
+  "strategy": "push_through" | "check_in" | "take_break"
 }
 
-Strategy options: "take_break", "switch_task", "push_through"`;
+Strategy rules:
+- early: "push_through" (building momentum)
+- mid: "check_in" (assess state)
+- late: "take_break" (physical micro-break)
+
+Write the message now. ${context.checkpoint} checkpoint. ${percentComplete}% complete. Go.`;
 }
 
-// PROMPT 3: Dashboard Insights
-// Called daily/weekly to generate user-facing insights
+// PROMPT 3: Dashboard Insights (FIXED JSON FORMAT)
 export function buildDashboardInsightsPrompt(sessions: Session[]): string {
   const weekData = sessions.map(s => ({
     task_type: s.task_type,
@@ -111,33 +133,26 @@ export function buildDashboardInsightsPrompt(sessions: Session[]): string {
     }),
   }));
 
-  return `Generate 3 actionable insights for a user based on their week's focus sessions.
+  return `Generate 3 actionable insights based on this user's focus sessions.
 
 Session Data:
 ${JSON.stringify(weekData, null, 2)}
 
-Create insights that are:
-1. Specific (reference actual data, not generic advice)
-2. Actionable (user can immediately apply them)
-3. Positive framing (focus on wins, not failures)
-4. Varied (don't repeat similar points)
+CRITICAL: You MUST return ONLY a JSON array. No preamble, no explanation, no markdown.
 
-Examples of GOOD insights:
-- "Your writing focus averages 8.2/10 in morning sessions vs 6.1/10 in afternoons. Schedule creative work before lunch."
-- "Reading sessions over 40 minutes show a 30% drop in focus quality. Try 35-minute blocks with 5-minute breaks."
-- "You completed 4 focused sessions this week vs 2 last week. Consistency is building."
+Format (EXACTLY like this):
+["Insight 1 here", "Insight 2 here", "Insight 3 here"]
 
-Examples of BAD insights:
-- "You should focus better" (not specific)
-- "Try to avoid distractions" (not actionable)
-- "Your focus was 6.5/10 on average" (just stating a number)
+Each insight should:
+- Be one sentence (15-25 words)
+- Reference specific data
+- Be actionable
+- Sound encouraging
 
-Return ONLY a JSON array of exactly 3 strings:
-[
-  "Insight 1 here",
-  "Insight 2 here", 
-  "Insight 3 here"
-]
+BAD response: "Here are 3 insights for you: [...]"
+GOOD response: ["Your coding focus averages 8.2/10 in mornings vs 6.1/10 afternoons.", "Reading sessions over 40 mins show 30% focus drop.", "You completed 4 sessions this week, up from 2 last week."]
 
-If there's insufficient data (less than 3 sessions), return fewer insights or encouraging messages about building consistency.`;
+If less than 3 sessions, return fewer insights.
+
+Return the JSON array NOW. No other text.`;
 }
