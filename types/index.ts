@@ -9,9 +9,9 @@ export interface Session {
   user_id: string;
   task_description: string;
   task_type: TaskType;
-  planned_duration: number; // minutes
+  planned_duration: number; 
   actual_duration?: number;
-  focus_quality?: number; // 1-10
+  focus_quality?: number;
   distraction_count: number;
   outcome?: string;
   started_at: string;
@@ -41,20 +41,20 @@ export interface Pattern {
   user_id: string;
   pattern_type: 'time_of_day' | 'task_type' | 'session_length';
   insight: string;
-  confidence: number; // 0.00 to 1.00
+  confidence: number; 
   detected_at: string;
 }
 
 export interface DashboardStats {
   today_focus_score: number;
-  weekly_trend: number; // percentage change
+  weekly_trend: number; 
   heatmap_data: HeatmapCell[];
   insights: string[];
 }
 
 export interface HeatmapCell {
-  day: string; // 'Mon', 'Tue', etc.
-  time_block: string; // '9am', '12pm', etc.
-  avg_focus_quality: number; // 0-10
+  day: string; 
+  time_block: string; 
+  avg_focus_quality: number; 
   session_count: number;
 }

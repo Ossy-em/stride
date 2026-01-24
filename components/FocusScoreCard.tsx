@@ -1,3 +1,4 @@
+import { Flame } from 'lucide-react';
 interface FocusScoreCardProps {
   todayScore: number; 
   weeklyTrend: number; 
@@ -90,6 +91,27 @@ export default function FocusScoreCard({ todayScore, weeklyTrend }: FocusScoreCa
           </p>
         </div>
       </div>
+       {/* Stats */}
+        <div className="flex flex-col gap-4">
+          {/* Weekly Trend */}
+          <div className="flex items-center gap-2">
+            {/* ... existing trend code ... */}
+          </div>
+
+          {/* NEW: Streak Counter */}
+          <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber/10 to-amber/5 rounded-xl border border-amber/20">
+            <Flame className="w-5 h-5 text-amber" />
+            <div>
+              <div className="text-lg font-bold text-amber">5 Days</div>
+              <div className="text-xs text-secondary">Current Streak</div>
+            </div>
+          </div>
+
+          {/* Quick Insight */}
+          <p className="text-sm text-secondary max-w-xs">
+            {/* ... existing insight code ... */}
+          </p>
+        </div>
     </div>
   );
 }

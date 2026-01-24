@@ -1,4 +1,4 @@
-// app/demo/page.tsx
+
 import ABTestDashboard from '@/components/ABTestDashboard';
 import Link from 'next/link';
 import { BarChart, Activity, Target } from 'lucide-react';

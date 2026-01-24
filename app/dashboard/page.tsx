@@ -1,57 +1,85 @@
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Play } from 'lucide-react';
 import FocusScoreCard from '@/components/FocusScoreCard';
 import WeeklyHeatmap from '@/components/WeeklyHeatmap';
 import AIInsights from '@/components/AIInsights';
-import Link from 'next/link';
-import type { DashboardStats } from '@/types';
 
-async function getDashboardData(): Promise<DashboardStats> {
-  const res = await fetch('http://localhost:3000/api/dashboard', {
-    cache: 'no-store',
-  });
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch dashboard data');
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchDashboardData();
+    }
+  }, [status]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await fetch('/api/dashboard');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
-  return res.json();
-}
-
-export default async function DashboardPage() {
-  const stats = await getDashboardData();
+  if (!dashboardData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">No data available</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-  
-        {/* <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Link 
-            href="/session/start"
-            className="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-button transition-smooth"
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Your Focus Dashboard</h1>
+
+          <button
+            onClick={() => router.push('/session/start')}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-400 text-white font-medium rounded-lg hover:from-teal-600 hover:to-teal-500 transition-all shadow-lg hover:shadow-xl"
           >
-            New Session
-          </Link>
-        </div> */}
+            <Play className="w-5 h-5" />
+            Start Focus Session
+          </button>
+        </div>
 
-      
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 mb-8">
+          <FocusScoreCard
+            score={dashboardData.today_focus_score}
+            trend={dashboardData.weekly_trend}
+          />
+        </div>
 
-          <div className="lg:col-span-1">
-            <FocusScoreCard 
-              todayScore={stats.today_focus_score} 
-              weeklyTrend={stats.weekly_trend} 
-            />
-          </div>
-
-       
-          <div className="lg:col-span-2">
-            <AIInsights insights={stats.insights} />
-          </div>
-
-      
-          <div className="lg:col-span-3">
-            <WeeklyHeatmap data={stats.heatmap_data} />
-          </div>
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <WeeklyHeatmap data={dashboardData.heatmap_data} />
+          <AIInsights insights={dashboardData.insights} />
         </div>
       </div>
     </div>

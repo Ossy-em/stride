@@ -1,33 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import type { DashboardStats, HeatmapCell } from '@/types';
+import { generateDashboardInsights } from '@/lib/ai-service';
+import { evaluateInsightQuality } from '@/lib/evaluators';
+import { logEvaluation } from '@/lib/opik';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Get actual user ID from auth session
-    const mockUserId = '00000000-0000-0000-0000-000000000001';
+    // Get authenticated user
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    // Get today's sessions
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     
     const { data: todaySessions, error: todayError } = await supabase
       .from('sessions')
       .select('focus_quality')
-      .eq('user_id', mockUserId)
+      .eq('user_id', user.id)
       .gte('started_at', todayStart.toISOString())
       .not('focus_quality', 'is', null);
 
     if (todayError) throw todayError;
 
-    // Calculate today's average focus score (scale 1-10 to 0-100)
     const todayScore = todaySessions.length > 0
       ? Math.round(
           (todaySessions.reduce((sum, s) => sum + (s.focus_quality || 0), 0) / todaySessions.length) * 10
         )
       : 0;
 
-    // Get last week's sessions for comparison
+
     const lastWeekStart = new Date();
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
     lastWeekStart.setHours(0, 0, 0, 0);
@@ -35,7 +45,7 @@ export async function GET(request: NextRequest) {
     const { data: lastWeekSessions, error: lastWeekError } = await supabase
       .from('sessions')
       .select('focus_quality')
-      .eq('user_id', mockUserId)
+      .eq('user_id', user.id) // CHANGED
       .gte('started_at', lastWeekStart.toISOString())
       .lt('started_at', todayStart.toISOString())
       .not('focus_quality', 'is', null);
@@ -48,27 +58,59 @@ export async function GET(request: NextRequest) {
         )
       : 0;
 
-    // Calculate weekly trend percentage
     const weeklyTrend = lastWeekScore > 0
       ? Math.round(((todayScore - lastWeekScore) / lastWeekScore) * 100)
       : 0;
 
-    // Get heatmap data (last 7 days)
-    const { data: recentSessions, error: recentError } = await supabase
+    const { data: heatmapSessions, error: heatmapError } = await supabase
       .from('sessions')
       .select('started_at, focus_quality')
-      .eq('user_id', mockUserId)
+      .eq('user_id', user.id)
       .gte('started_at', lastWeekStart.toISOString())
       .not('focus_quality', 'is', null)
       .order('started_at', { ascending: true });
 
-    if (recentError) throw recentError;
+    if (heatmapError) throw heatmapError;
 
-    // Process heatmap data
-    const heatmapData: HeatmapCell[] = processHeatmapData(recentSessions);
+    const heatmapData: HeatmapCell[] = processHeatmapData(heatmapSessions || []);
 
-    // Get AI insights (mock for now, will replace with real AI)
-    const insights = generateMockInsights(todaySessions.length, todayScore);
+    const { data: sessionsForAI, error: aiError } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('started_at', lastWeekStart.toISOString())
+      .not('focus_quality', 'is', null)
+      .order('started_at', { ascending: false })
+      .limit(20);
+
+    if (aiError) throw aiError;
+
+    console.log('🤖 Generating AI insights for', sessionsForAI?.length || 0, 'sessions...');
+    
+    const insights = (sessionsForAI && sessionsForAI.length >= 3)
+      ? await generateDashboardInsights(sessionsForAI, user.id) 
+      : ['Complete a few more sessions to unlock AI-powered insights.'];
+
+    console.log('✅ AI insights generated:', insights);
+
+
+    if (sessionsForAI && sessionsForAI.length >= 3) {
+      const qualityScore = await evaluateInsightQuality(insights, sessionsForAI);
+      
+      await logEvaluation({
+        name: 'insight_quality',
+        traceId: `dashboard_${Date.now()}`,
+        score: qualityScore / 10,
+        metadata: {
+          userId: user.id, 
+          sessionCount: sessionsForAI.length,
+          insightCount: insights.length,
+          rawScore: qualityScore,
+        },
+      });
+
+      console.log(`📊 Insight quality score: ${qualityScore}/10`);
+    }
 
     const dashboardStats: DashboardStats = {
       today_focus_score: todayScore,
@@ -88,7 +130,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper function to process heatmap data
 function processHeatmapData(sessions: any[]): HeatmapCell[] {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const timeBlocks = ['9am', '12pm', '3pm', '6pm', '9pm'];
@@ -96,19 +137,17 @@ function processHeatmapData(sessions: any[]): HeatmapCell[] {
 
   days.forEach(day => {
     timeBlocks.forEach(timeBlock => {
-      // Filter sessions for this day/time combination
       const relevantSessions = sessions.filter(session => {
         const date = new Date(session.started_at);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const hour = date.getHours();
         
-        // Map time blocks to hour ranges
         let blockMatch = false;
         if (timeBlock === '9am' && hour >= 9 && hour < 12) blockMatch = true;
         if (timeBlock === '12pm' && hour >= 12 && hour < 15) blockMatch = true;
         if (timeBlock === '3pm' && hour >= 15 && hour < 18) blockMatch = true;
         if (timeBlock === '6pm' && hour >= 18 && hour < 21) blockMatch = true;
-        if (timeBlock === '9pm' && hour >= 21 || hour < 9) blockMatch = true;
+        if (timeBlock === '9pm' && (hour >= 21 || hour < 9)) blockMatch = true;
         
         return dayName === day && blockMatch;
       });
@@ -127,27 +166,4 @@ function processHeatmapData(sessions: any[]): HeatmapCell[] {
   });
 
   return heatmap;
-}
-
-// Mock insights (will be replaced with AI-generated insights)
-function generateMockInsights(sessionCount: number, score: number): string[] {
-  if (sessionCount === 0) return [];
-
-  const insights: string[] = [];
-
-  if (score >= 80) {
-    insights.push("Your focus has been exceptional today. Morning sessions seem to work best for you.");
-  } else if (score >= 60) {
-    insights.push("Solid focus patterns emerging. Try scheduling deep work between 9-11am.");
-  } else {
-    insights.push("Focus dips noticed after 45 minutes. Consider shorter, more frequent sessions.");
-  }
-
-  if (sessionCount > 3) {
-    insights.push("You're building consistency. Three focused sessions daily correlates with your best work.");
-  }
-
-  insights.push("Coding tasks show 30% better focus in morning hours compared to afternoons.");
-
-  return insights;
 }
