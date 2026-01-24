@@ -71,10 +71,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-6 mb-8">
-          <FocusScoreCard
-            score={dashboardData.today_focus_score}
-            trend={dashboardData.weekly_trend}
-          />
+         <FocusScoreCard
+  todayScore={dashboardData.today_focus_score}
+  weeklyTrend={dashboardData.weekly_trend}
+/>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
