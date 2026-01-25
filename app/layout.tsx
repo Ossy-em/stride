@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers';
+import { Inter, Syne } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const syne = Syne({ subsets: ['latin'], variable: '--font-syne' });
+
 
 export const metadata: Metadata = {
   title: 'Stride - AI Focus Companion',
@@ -14,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+     <body className={`${inter.variable} ${syne.variable} font-sans`}>
         <Providers>
           {children}
         </Providers>

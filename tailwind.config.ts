@@ -32,10 +32,10 @@ const config: Config = {
         coral: '#F87171',
         error: '#EF4444',
       },
-      fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
-      },
+     fontFamily: {
+  sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+  display: ['var(--font-syne)', 'system-ui', 'sans-serif'],
+},
       borderRadius: {
         card: '20px',
         input: '12px',

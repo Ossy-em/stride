@@ -1,155 +1,410 @@
-import Link from 'next/link';
-import { ArrowRight, Play, Brain, Shield, TrendingUp, Zap, Target, Lightbulb, Check, X } from 'lucide-react';
+'use client';
 
-export default function LandingPage() {
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import {
+  Brain,
+  Zap,
+  BarChart3,
+  Shield,
+  ArrowRight,
+  Menu,
+  X,
+  ChevronDown,
+  Sparkles,
+  Target,
+  Bell,
+  Activity,
+  CheckCircle2,
+  Play,
+  TrendingUp,
+} from 'lucide-react';
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] } },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
+  },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.25, 0.4, 0.25, 1] } },
+};
+
+// Color: Using emerald-700 (#047857) as primary
+// Clean, single green without gradients
+
+// Navbar Component
+function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: 'Features', href: '#features' },
+    { name: 'How It Works', href: '#how-it-works' },
+    { name: 'Pricing', href: '#pricing' },
+    { name: 'FAQ', href: '#faq' },
+  ];
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <HeroSection />
-      
-      {/* Problem Section */}
-      <ProblemSection />
-      
-      {/* How It Works */}
-      <HowItWorksSection />
-      
-      {/* Features */}
-      <FeaturesSection />
-      
-      {/* Social Proof */}
-      <SocialProofSection />
-      
-      {/* Final CTA */}
-      <FinalCTASection />
-      
-      {/* Footer */}
-      <Footer />
-    </div>
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'bg-white border-b border-stone-200' : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-700 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="text-lg font-semibold text-stone-900">Stride</span>
+          </a>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                className="text-sm text-stone-600 hover:text-stone-900 transition-colors"
+              >
+                {link.name}
+              </a>
+            ))}
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            <a
+              href="/login"
+              className="text-sm text-stone-600 hover:text-stone-900 transition-colors"
+            >
+              Log in
+            </a>
+            <a
+              href="/signup"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors"
+            >
+              Get Started
+            </a>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-stone-600"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        <motion.div
+          initial={false}
+          animate={isMobileMenuOpen ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+          className="md:hidden overflow-hidden bg-white"
+        >
+          <div className="py-4 space-y-1 border-t border-stone-100">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                className="block px-2 py-2.5 text-stone-600 hover:text-stone-900 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {link.name}
+              </a>
+            ))}
+            <div className="pt-4 space-y-2">
+              <a
+                href="/login"
+                className="block w-full py-2.5 text-center text-stone-600 border border-stone-200 rounded-lg"
+              >
+                Log in
+              </a>
+              <a
+                href="/signup"
+                className="block w-full py-2.5 text-center text-white font-medium bg-teal-700 rounded-lg"
+              >
+                Get Started
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </motion.nav>
   );
 }
 
 // Hero Section
 function HeroSection() {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start start', 'end start'],
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
   return (
-    <section className="relative overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-purple-50 -z-10" />
-      
-      {/* Blur Orbs */}
-      <div className="absolute top-20 right-20 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl -z-10" />
+    <section ref={ref} className="relative min-h-screen flex items-center justify-center pt-16 bg-stone-50">
+      {/* Subtle pattern */}
+      <div className="absolute inset-0 opacity-[0.015]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32 lg:pb-40">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Copy */}
-          <div className="text-center lg:text-left">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6">
-              Your AI knows when you're about to{' '}
-              <span className="bg-gradient-to-r from-teal-500 to-teal-600 bg-clip-text text-transparent">
-                lose focus.
-              </span>
+      <motion.div style={{ opacity }} className="relative z-10 max-w-6xl mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Left Content */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="text-center lg:text-left"
+          >
+            {/* Badge */}
+            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              <span className="text-xs text-emerald-800 font-medium uppercase tracking-wide">AI-Powered Focus</span>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-stone-900">
+              Stay focused
               <br />
-              You don't.
-            </h1>
-            
-            <p className="text-lg sm:text-xl text-gray-600 leading-relaxed mb-8 max-w-2xl">
-              You've felt it before - that moment right before you check Twitter. 
-              Before you open a new tab. Before the next 20 minutes disappear.
-              <br /><br />
-              <span className="font-semibold text-gray-800">
-                Stride catches that moment.
-              </span> Five minutes before you typically break focus, 
-              it intervenes with strategies that actually work for you. Not generic advice. 
-              Not willpower. Just data.
-            </p>
+              <span className="text-teal-700">before you drift</span>
+            </motion.h1>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link 
+            {/* Subheadline */}
+            <motion.p variants={fadeInUp} className="mt-6 text-lg text-stone-600 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              Stride predicts when you are about to lose focus and intervenes before distractions take over. Work smarter with AI that understands your rhythm.
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <a
                 href="/signup"
-                className="group px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-full text-lg hover:shadow-2xl hover:shadow-teal-500/30 transition-all hover:-translate-y-1"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-teal-700 rounded-lg hover:bg-emerald-800 transition-colors"
               >
-                Join the Waitlist
-                <ArrowRight className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              
-              <a 
-                href="#how-it-works"
-                className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-full text-lg hover:border-teal-500 hover:text-teal-600 transition-all"
-              >
-                See How It Works ↓
+                Start Free Trial
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </a>
-            </div>
-          </div>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-stone-700 border border-stone-300 rounded-lg hover:bg-stone-100 transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                See How It Works
+              </a>
+            </motion.div>
 
-          {/* Right: Hero Visual */}
-          <div className="relative">
-            <div className="relative mx-auto max-w-md lg:max-w-lg">
-              {/* Image Placeholder */}
-              <div className="aspect-[9/16] bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl shadow-2xl flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-purple-500/10" />
-                <div className="relative z-10 text-center p-8">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-teal-500 rounded-full flex items-center justify-center">
-                    <Zap className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: hero-phone-mockup]</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    iPhone mockup showing Stride timer (42:15) with notification: 
-                    "You're at your 45-min limit. Time for a 5-min walk?"
-                  </p>
-                </div>
+            {/* Trust Indicators */}
+            <motion.div variants={fadeInUp} className="mt-10 flex items-center gap-6 justify-center lg:justify-start">
+              <div className="flex -space-x-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-8 h-8 rounded-full border-2 border-stone-50 bg-stone-300"
+                  />
+                ))}
               </div>
-              
-              {/* Floating shadow effect */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-teal-500/20 blur-2xl -z-10 translate-y-8" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-stone-900">2,000+ users</p>
+                <p className="text-xs text-stone-500">staying focused daily</p>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Right - Phone Mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.4, 0.25, 1] }}
+            className="relative flex justify-center lg:justify-end"
+          >
+            <div className="relative">
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <Image
+                  src="/assets/hero-phone.png"
+                  alt="Stride App Interface"
+                  width={380}
+                  height={760}
+                  className="relative z-10"
+                  priority
+                />
+              </motion.div>
+
+              {/* Floating Cards - minimal style */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                className="absolute -left-4 top-1/4 p-3 bg-white rounded-xl border border-stone-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-teal-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-stone-900">Focus Predicted</p>
+                    <p className="text-xs text-stone-500">12 min remaining</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+                className="absolute -right-2 bottom-1/3 p-3 bg-white rounded-xl border border-stone-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-teal-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-stone-900">Focus Score</p>
+                    <p className="text-xs text-teal-700 font-medium">+23% this week</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Scroll Indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+      >
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="flex flex-col items-center gap-1.5 text-stone-400"
+        >
+          <span className="text-[10px] uppercase tracking-widest">Scroll</span>
+          <ChevronDown className="w-4 h-4" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
 
-// Problem Section
-function ProblemSection() {
-  return (
-    <section className="py-24 bg-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-4xl sm:text-5xl font-bold mb-8">
-          You lose hours you don't even realize are gone
-        </h2>
-        
-        <div className="prose prose-lg mx-auto text-gray-600 leading-relaxed space-y-6">
-          <p>
-            It's not a lack of discipline. You sit down to work, genuinely focused. 
-            Then somehow it's 2pm and you've accomplished one thing.
-          </p>
-          
-          <p>
-            The problem isn't that you get distracted. It's that you don't notice 
-            the moment <span className="font-semibold text-gray-800">BEFORE</span> distraction. 
-            That split second where your brain decides "just a quick check..."
-          </p>
-          
-          <p>
-            Blockers don't work - they're too rigid. Timers don't adapt. Willpower alone? 
-            You've already tried that.
-          </p>
-          
-          <p className="text-2xl font-semibold text-gray-900">
-            What if something could predict that moment for you?
-          </p>
-        </div>
+// Features Section
+function FeaturesSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
 
-        {/* Visual Placeholder */}
-        <div className="mt-16 aspect-[16/6] bg-gradient-to-r from-teal-50 via-amber-50 to-coral-50 rounded-2xl shadow-lg flex items-center justify-center">
-          <div className="text-center p-8">
-            <TrendingUp className="w-12 h-12 mx-auto mb-4 text-teal-500" />
-            <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: distraction-timeline]</p>
-            <p className="text-xs text-gray-500 max-w-md mx-auto">
-              Timeline showing: focused person (teal glow) → decision point (amber warning) → distracted (coral, multiple tabs)
-            </p>
-          </div>
-        </div>
+  const features = [
+    {
+      icon: Brain,
+      title: 'Predictive Focus AI',
+      description:
+        'Our AI learns your focus patterns and predicts when distraction is imminent, intervening at the perfect moment.',
+    },
+    {
+      icon: Bell,
+      title: 'Smart Interventions',
+      description:
+        'Personalized nudges tailored to your work style. From gentle reminders to guided breathing exercises.',
+    },
+    {
+      icon: BarChart3,
+      title: 'Deep Analytics',
+      description:
+        'Comprehensive insights into your focus sessions. Track progress, identify patterns, and optimize your workflow.',
+    },
+    {
+      icon: Target,
+      title: 'Session Goals',
+      description:
+        'Set clear objectives for each focus session. Stride helps you stay accountable and measure achievement.',
+    },
+    {
+      icon: Activity,
+      title: 'Real-time Monitoring',
+      description:
+        'Continuous assessment of your focus state without being intrusive. Works silently in the background.',
+    },
+    {
+      icon: Shield,
+      title: 'Privacy First',
+      description:
+        'Your data stays yours. All processing happens locally with enterprise-grade encryption for cloud features.',
+    },
+  ];
+
+  return (
+    <section id="features" ref={ref} className="relative py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <motion.p variants={fadeInUp} className="text-teal-700 font-medium text-sm uppercase tracking-wide mb-3">
+            Features
+          </motion.p>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900 mb-4">
+            Everything you need to master focus
+          </motion.h2>
+          <motion.p variants={fadeInUp} className="text-stone-600">
+            Stride combines cutting-edge AI with proven productivity techniques to help you achieve deep work consistently.
+          </motion.p>
+        </motion.div>
+
+        {/* Features Grid */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+          {features.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={fadeInUp}
+              className="group p-6 rounded-2xl border border-stone-200 hover:border-emerald-200 bg-white hover:bg-emerald-50/30 transition-all duration-300"
+            >
+              {/* Icon */}
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                <feature.icon className="w-5 h-5 text-teal-700" />
+              </div>
+
+              {/* Content */}
+              <h3 className="text-lg font-semibold text-stone-900 mb-2">{feature.title}</h3>
+              <p className="text-stone-600 text-sm leading-relaxed">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
@@ -157,441 +412,457 @@ function ProblemSection() {
 
 // How It Works Section
 function HowItWorksSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const steps = [
+    {
+      number: '01',
+      title: 'Start a Focus Session',
+      description:
+        'Open Stride and begin your work session. Set your goals and let the AI calibrate to your current state.',
+    },
+    {
+      number: '02',
+      title: 'AI Monitors Your Patterns',
+      description:
+        'Our predictive engine analyzes micro-behaviors to understand when your focus is about to break.',
+    },
+    {
+      number: '03',
+      title: 'Timely Interventions',
+      description:
+        'Before distraction hits, Stride delivers personalized interventions: breathing exercises, movement prompts, or mindful breaks.',
+    },
+    {
+      number: '04',
+      title: 'Track and Improve',
+      description:
+        'Review your focus analytics, identify patterns, and watch your deep work capacity grow over time.',
+    },
+  ];
+
   return (
-    <section id="how-it-works" className="py-24 bg-gradient-to-b from-white to-teal-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            Three steps. Zero surveillance.
-          </h2>
-        </div>
-
-        {/* Step 1 */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
-          <div className="order-2 lg:order-1">
-            <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center p-8">
-                <Play className="w-12 h-12 mx-auto mb-4 text-teal-500" />
-                <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: session-start-ui]</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  MacBook screen showing start session form: task input, type dropdown, duration slider, teal button
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center">
-                <Play className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-teal-600 font-semibold text-sm uppercase tracking-wide">Step 1</span>
-            </div>
-            
-            <h3 className="text-3xl font-bold mb-4">One-click sessions</h3>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-6">
-              Start a focus session. Work. When you're done, rate your focus (1-10). 
-              That's it. No tab monitoring. No screen recording. No creepy tracking.
-            </p>
-            
-            <p className="text-lg text-gray-800 font-semibold">
-              You tell Stride what happened. It learns from what you share.
-            </p>
-          </div>
-        </div>
-
-        {/* Step 2 */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
-          <div>
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-purple-600 font-semibold text-sm uppercase tracking-wide">Step 2</span>
-            </div>
-            
-            <h3 className="text-3xl font-bold mb-4">Patterns you'd never notice</h3>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-6">
-              After 5 sessions, Stride knows more about your focus than you do.
-            </p>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Check className="w-4 h-4 text-teal-600" />
-                </div>
-                <p className="text-gray-700">"You lose concentration after 45 minutes on coding tasks."</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Check className="w-4 h-4 text-teal-600" />
-                </div>
-                <p className="text-gray-700">"Your reading sessions are 40% better before lunch."</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Check className="w-4 h-4 text-teal-600" />
-                </div>
-                <p className="text-gray-700">"Friday afternoons? Don't even try deep work."</p>
-              </div>
-            </div>
-            
-            <p className="text-lg text-gray-800 font-semibold">
-              It doesn't judge. It just knows.
-            </p>
-          </div>
-
-          <div>
-            <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center p-8">
-                <Brain className="w-12 h-12 mx-auto mb-4 text-purple-500" />
-                <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: ai-insights-dashboard]</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Dashboard with focus score (87/100), weekly heatmap, 3 insight cards with icons
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Step 3 */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="order-2 lg:order-1">
-            <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center p-8">
-                <Shield className="w-12 h-12 mx-auto mb-4 text-amber" />
-                <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: intervention-notification]</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Browser notification over code editor: "You're at 42 mins - time for a 5-min walk?"
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-amber flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-amber font-semibold text-sm uppercase tracking-wide">Step 3</span>
-            </div>
-            
-            <h3 className="text-3xl font-bold mb-4">Catches you before the scroll</h3>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-6">
-              Here's what makes Stride different: it doesn't wait until you're already distracted.
-            </p>
-            
-            <div className="bg-teal-50 border-l-4 border-teal-500 p-6 rounded-r-lg mb-6">
-              <p className="text-gray-700 mb-2">At 40 minutes (5 minutes before you typically lose focus):</p>
-              <p className="text-lg font-semibold text-gray-900">
-                "You're at your usual limit. Take a 5-minute walk?"
-              </p>
-            </div>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-4">
-              Not generic advice. Not after you've lost 20 minutes. <span className="font-bold text-gray-900">BEFORE.</span>
-            </p>
-            
-            <p className="text-lg text-gray-800 font-semibold">
-              And if "take a break" doesn't work? Stride tries "switch tasks" next time. 
-              It learns what actually works for you.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Features Section
-function FeaturesSection() {
-  return (
-    <section className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Feature 1: Predictive Interventions */}
-        <div className="mb-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold mb-4">
-                Predictive AI
-              </div>
-              <h3 className="text-4xl font-bold mb-6">
-                Catches you before the scroll
-              </h3>
-              <p className="text-xl text-gray-600 leading-relaxed mb-6">
-                Most "focus apps" react after you're already distracted. 
-                Stride predicts the moment and intervenes 5 minutes early.
-              </p>
-              <p className="text-lg text-gray-800 font-semibold">
-                Because by the time you realize you're distracted, 
-                you've already lost 20 minutes.
-              </p>
-            </div>
-
-            <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center p-8">
-                <Target className="w-12 h-12 mx-auto mb-4 text-teal-500" />
-                <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: prediction-timeline]</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Comparison: Other apps (notification at 45:00, too late) vs Stride (notification at 40:00, prevents distraction)
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 2: Personalized Insights */}
-        <div className="mb-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-                <div className="text-center p-8">
-                  <Lightbulb className="w-12 h-12 mx-auto mb-4 text-amber" />
-                  <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: ai-insights-dashboard]</p>
-                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                    (Reuse dashboard screenshot from Step 2)
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <div className="inline-block px-4 py-2 bg-amber/20 text-amber-700 rounded-full text-sm font-semibold mb-4">
-                Deep Learning
-              </div>
-              <h3 className="text-4xl font-bold mb-6">
-                Your brain, decoded
-              </h3>
-              <p className="text-xl text-gray-600 leading-relaxed mb-6">
-                Stride doesn't give you the same generic advice as everyone else.
-              </p>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-white font-bold">1</span>
-                  </div>
-                  <p className="text-lg text-gray-700">
-                    <span className="font-semibold">YOUR</span> optimal session length for each task type
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-white font-bold">2</span>
-                  </div>
-                  <p className="text-lg text-gray-700">
-                    When <span className="font-semibold">YOU</span> focus best (and when you absolutely don't)
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-white font-bold">3</span>
-                  </div>
-                  <p className="text-lg text-gray-700">
-                    What recovery strategies work for <span className="font-semibold">YOU</span> specifically
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-lg text-gray-800 font-semibold">
-                This isn't productivity theater. It's data.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 3: Privacy */}
-        <div className="mb-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold mb-4">
-                Privacy First
-              </div>
-              <h3 className="text-4xl font-bold mb-6">
-                Zero surveillance. Just self-reports.
-              </h3>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <X className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-                  <p className="text-lg text-gray-700">Stride doesn't watch your screen</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <X className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-                  <p className="text-lg text-gray-700">Doesn't monitor your tabs</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <X className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-                  <p className="text-lg text-gray-700">Doesn't track what websites you visit</p>
-                </div>
-              </div>
-
-              <div className="bg-teal-50 border-2 border-teal-200 rounded-xl p-6">
-                <div className="flex items-start gap-3">
-                  <Check className="w-6 h-6 text-teal-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-lg text-gray-900 font-semibold mb-2">You rate your focus after each session.</p>
-                    <p className="text-gray-600">That's the only data it needs.</p>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-lg text-gray-800 font-semibold mt-6">
-                The AI learns from what YOU tell it, not from spying on you.
-              </p>
-            </div>
-
-            <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center p-8">
-                <Shield className="w-12 h-12 mx-auto mb-4 text-purple-500" />
-                <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: privacy-shield]</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Shield with "No tracking" badge, crossed-out icons (screen recording, tab monitoring), checkmark for rating slider
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 4: Adaptive Strategies */}
-        <div>
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl flex items-center justify-center">
-                <div className="text-center p-8">
-                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-teal-500" />
-                  <p className="text-sm text-gray-600 font-mono mb-2">[IMAGE: ab-testing-results]</p>
-                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                    Bar chart: "Take Break" 70%, "Switch Task" 45%, "Push Through" 30%. Title: "What Works For You"
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <div className="inline-block px-4 py-2 bg-amber/20 text-amber-700 rounded-full text-sm font-semibold mb-4">
-                Self-Improving
-              </div>
-              <h3 className="text-4xl font-bold mb-6">
-                Learns what works, drops what doesn't
-              </h3>
-              <p className="text-xl text-gray-600 leading-relaxed mb-6">
-                If "take a break" fails 3 times, Stride switches to "switch tasks."
-                If morning interventions get dismissed but afternoon ones work, it adapts.
-              </p>
-              
-              <div className="bg-gradient-to-r from-teal-50 to-amber-50 border-2 border-teal-200 rounded-xl p-6 mb-6">
-                <p className="text-lg text-gray-900 font-semibold mb-2">
-                  This isn't a rigid system with one-size-fits-all rules.
-                </p>
-                <p className="text-gray-700">
-                  It's an AI that actually learns YOUR behavior.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-// Social Proof Section
-function SocialProofSection() {
-  return (
-    <section className="py-24 bg-gradient-to-b from-white to-teal-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold mb-6">
-          Building in Public
-        </div>
-        
-        <h2 className="text-4xl font-bold mb-4">
-          Follow along as we build Stride
-        </h2>
-        
-        <p className="text-xl text-gray-600 mb-12">
-          We're launching in 4 weeks. Here's our progress so far.
-        </p>
-
-        {/* Stats */}
-        <div className="grid sm:grid-cols-3 gap-8 mb-16">
-          <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-teal-100">
-            <div className="text-5xl font-bold text-teal-600 mb-2">327</div>
-            <div className="text-gray-600 font-medium">Focus sessions tracked</div>
-          </div>
-          <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-teal-100">
-            <div className="text-5xl font-bold text-teal-600 mb-2">1,847</div>
-            <div className="text-gray-600 font-medium">Hours analyzed</div>
-          </div>
-          <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-teal-100">
-            <div className="text-5xl font-bold text-teal-600 mb-2">73%</div>
-            <div className="text-gray-600 font-medium">Intervention success rate</div>
-          </div>
-        </div>
-
-        {/* Twitter Embed Placeholder */}
-        <div className="bg-white rounded-2xl p-12 shadow-lg border-2 border-gray-200">
-          <p className="text-gray-500 italic mb-4">
-            [Embedded Twitter/X timeline or recent build tweets]
-          </p>
-          <a 
-            href="https://twitter.com/yourusername" 
-            target="_blank"
-            className="inline-flex items-center gap-2 text-teal-600 font-semibold hover:text-teal-700"
-          >
-            Follow our build journey on Twitter
-            <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Final CTA Section
-function FinalCTASection() {
-  return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-teal-600 to-purple-600 -z-10" />
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 -z-10" />
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-        <div className="mb-12">
-          <div className="aspect-[16/9] max-w-2xl mx-auto bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl shadow-2xl flex items-center justify-center border border-white/20">
-            <div className="text-center p-8">
-              <Zap className="w-16 h-16 mx-auto mb-4 text-white" />
-              <p className="text-sm text-white/80 font-mono mb-2">[IMAGE: final-cta-visual]</p>
-              <p className="text-xs text-white/60 max-w-md mx-auto">
-                Time transformation: blurred hours slipping away → sharp focused hours (teal blocks). Arrow showing transformation.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-5xl sm:text-6xl font-bold text-white mb-6">
-          Stop losing hours you don't even realize are gone
-        </h2>
-        
-        <p className="text-xl sm:text-2xl text-white/90 mb-12 max-w-3xl mx-auto">
-          Join the waitlist. We're launching in 4 weeks.
-        </p>
-
-        <Link 
-          href="/signup"
-          className="inline-block px-12 py-5 bg-white text-teal-600 font-bold text-xl rounded-full hover:bg-gray-50 hover:shadow-2xl transition-all hover:-translate-y-1"
+    <section id="how-it-works" className="relative py-24 bg-stone-50">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          ref={ref}
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="text-center max-w-2xl mx-auto mb-16"
         >
-          Get Early Access
-        </Link>
+          <motion.p variants={fadeInUp} className="text-teal-700 font-medium text-sm uppercase tracking-wide mb-3">
+            How It Works
+          </motion.p>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900">
+            Your path to unbreakable focus
+          </motion.h2>
+        </motion.div>
 
-        <p className="mt-6 text-white/70 text-sm">
-          No credit card required. Just your email.
-        </p>
+        {/* Steps */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="grid md:grid-cols-2 gap-6"
+        >
+          {steps.map((step, index) => (
+            <motion.div
+              key={step.number}
+              variants={fadeInUp}
+              className="relative p-6 bg-white rounded-2xl border border-stone-200"
+            >
+              <div className="flex gap-4">
+                <span className="text-4xl font-bold text-emerald-100">{step.number}</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-stone-900 mb-2">{step.title}</h3>
+                  <p className="text-stone-600 text-sm leading-relaxed">{step.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// Stats Section
+function StatsSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const stats = [
+    { value: '43%', label: 'Average focus improvement' },
+    { value: '2.5h', label: 'Extra deep work daily' },
+    { value: '89%', label: 'User satisfaction rate' },
+    { value: '12min', label: 'Faster to enter flow state' },
+  ];
+
+  return (
+    <section ref={ref} className="relative py-20 bg-teal-700">
+      <div className="max-w-6xl mx-auto px-6">
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+        >
+          {stats.map((stat) => (
+            <motion.div key={stat.label} variants={fadeInUp} className="text-center">
+              <p className="text-4xl sm:text-5xl font-bold text-white mb-1">
+                {stat.value}
+              </p>
+              <p className="text-emerald-100 text-sm">{stat.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// Testimonials Section
+function TestimonialsSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const testimonials = [
+    {
+      quote:
+        'Stride has completely transformed how I work. The predictive interventions feel almost magical - it knows when I need a break before I do.',
+      author: 'Sarah Chen',
+      role: 'Software Engineer',
+    },
+    {
+      quote:
+        "As a writer, maintaining focus is everything. Stride's gentle nudges help me stay in the zone for hours. My output has nearly doubled.",
+      author: 'Marcus Williams',
+      role: 'Content Creator',
+    },
+    {
+      quote:
+        "The analytics alone are worth it. I finally understand my focus patterns and can structure my day around my natural energy cycles.",
+      author: 'Elena Rodriguez',
+      role: 'Product Manager',
+    },
+  ];
+
+  return (
+    <section ref={ref} className="relative py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <motion.p variants={fadeInUp} className="text-teal-700 font-medium text-sm uppercase tracking-wide mb-3">
+            Testimonials
+          </motion.p>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900">
+            Loved by focused minds
+          </motion.h2>
+        </motion.div>
+
+        {/* Testimonials Grid */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="grid md:grid-cols-3 gap-6"
+        >
+          {testimonials.map((testimonial) => (
+            <motion.div
+              key={testimonial.author}
+              variants={fadeInUp}
+              className="p-6 rounded-2xl border border-stone-200 bg-stone-50"
+            >
+              <p className="text-stone-700 leading-relaxed mb-6 text-sm">"{testimonial.quote}"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-stone-300" />
+                <div>
+                  <p className="font-medium text-stone-900 text-sm">{testimonial.author}</p>
+                  <p className="text-xs text-stone-500">{testimonial.role}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// Pricing Section
+function PricingSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const plans = [
+    {
+      name: 'Free',
+      price: '$0',
+      description: 'Perfect for getting started',
+      features: [
+        '3 focus sessions per day',
+        'Basic interventions',
+        'Weekly focus summary',
+        'Mobile app access',
+      ],
+      cta: 'Get Started',
+      highlighted: false,
+    },
+    {
+      name: 'Pro',
+      price: '$12',
+      period: '/month',
+      description: 'For serious productivity seekers',
+      features: [
+        'Unlimited focus sessions',
+        'AI-powered predictive interventions',
+        'Advanced analytics dashboard',
+        'Custom intervention preferences',
+        'Desktop and mobile apps',
+        'Priority support',
+      ],
+      cta: 'Start Free Trial',
+      highlighted: true,
+    },
+    {
+      name: 'Team',
+      price: '$29',
+      period: '/user/month',
+      description: 'For teams that ship',
+      features: [
+        'Everything in Pro',
+        'Team analytics and insights',
+        'Admin dashboard',
+        'SSO integration',
+        'Dedicated account manager',
+        'Custom integrations',
+      ],
+      cta: 'Contact Sales',
+      highlighted: false,
+    },
+  ];
+
+  return (
+    <section id="pricing" ref={ref} className="relative py-24 bg-stone-50">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <motion.p variants={fadeInUp} className="text-teal-700 font-medium text-sm uppercase tracking-wide mb-3">
+            Pricing
+          </motion.p>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900 mb-4">
+            Simple, transparent pricing
+          </motion.h2>
+          <motion.p variants={fadeInUp} className="text-stone-600">
+            Start free and upgrade when you are ready for more.
+          </motion.p>
+        </motion.div>
+
+        {/* Pricing Cards */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto"
+        >
+          {plans.map((plan) => (
+            <motion.div
+              key={plan.name}
+              variants={fadeInUp}
+              className={`relative p-6 rounded-2xl ${
+                plan.highlighted
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-white border border-stone-200'
+              }`}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-900 rounded-full">
+                  <span className="text-[10px] font-medium text-emerald-100 uppercase tracking-wide">Most Popular</span>
+                </div>
+              )}
+
+              <div className="mb-5">
+                <h3 className={`text-lg font-semibold mb-1 ${plan.highlighted ? 'text-white' : 'text-stone-900'}`}>
+                  {plan.name}
+                </h3>
+                <p className={`text-sm ${plan.highlighted ? 'text-emerald-100' : 'text-stone-500'}`}>
+                  {plan.description}
+                </p>
+              </div>
+
+              <div className="mb-5">
+                <span className={`text-3xl font-bold ${plan.highlighted ? 'text-white' : 'text-stone-900'}`}>
+                  {plan.price}
+                </span>
+                {plan.period && (
+                  <span className={plan.highlighted ? 'text-emerald-100' : 'text-stone-500'}>
+                    {plan.period}
+                  </span>
+                )}
+              </div>
+
+              <ul className="space-y-2.5 mb-6">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2">
+                    <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                      plan.highlighted ? 'text-emerald-200' : 'text-emerald-600'
+                    }`} />
+                    <span className={`text-sm ${plan.highlighted ? 'text-emerald-50' : 'text-stone-600'}`}>
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href="/signup"
+                className={`block w-full py-2.5 text-center text-sm font-medium rounded-lg transition-colors ${
+                  plan.highlighted
+                    ? 'bg-white text-teal-700 hover:bg-emerald-50'
+                    : 'border border-stone-300 text-stone-700 hover:bg-stone-50'
+                }`}
+              >
+                {plan.cta}
+              </a>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// FAQ Section
+function FAQSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqs = [
+    {
+      question: 'How does Stride predict when I will lose focus?',
+      answer:
+        'Stride uses a combination of session timing patterns, historical data from your past sessions, and AI models trained on productivity research. It learns your unique focus rhythms and identifies the subtle signs that precede distraction.',
+    },
+    {
+      question: 'What kind of interventions does Stride provide?',
+      answer:
+        'Interventions range from gentle visual reminders to guided breathing exercises, movement prompts, mindfulness moments, and strategic break suggestions. You can customize which types of interventions you prefer and when they appear.',
+    },
+    {
+      question: 'Is my data private and secure?',
+      answer:
+        'Absolutely. All focus session data is processed locally on your device by default. If you opt into cloud features for cross-device sync, your data is encrypted end-to-end with keys only you control.',
+    },
+    {
+      question: 'Can I use Stride with my existing productivity tools?',
+      answer:
+        'Yes! Stride integrates with popular tools like Notion, Todoist, Linear, and calendar apps. The Pro plan includes API access for custom integrations.',
+    },
+    {
+      question: 'What if Stride interrupts me during actual deep work?',
+      answer:
+        'The AI learns from every interaction. If you dismiss an intervention because you are in flow, Stride notes this and adjusts its predictions. Most users report the AI becomes highly accurate within the first week.',
+    },
+  ];
+
+  return (
+    <section id="faq" ref={ref} className="relative py-24 bg-white">
+      <div className="max-w-2xl mx-auto px-6">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={staggerContainer}
+          className="text-center mb-12"
+        >
+          <motion.p variants={fadeInUp} className="text-teal-700 font-medium text-sm uppercase tracking-wide mb-3">
+            FAQ
+          </motion.p>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900">
+            Questions? Answers.
+          </motion.h2>
+        </motion.div>
+
+        {/* FAQ Items */}
+        <motion.div initial="hidden" animate={isInView ? 'visible' : 'hidden'} variants={staggerContainer} className="space-y-3">
+          {faqs.map((faq, index) => (
+            <motion.div
+              key={index}
+              variants={fadeInUp}
+              className="border border-stone-200 rounded-xl overflow-hidden bg-white"
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                className="w-full flex items-center justify-between p-5 text-left hover:bg-stone-50 transition-colors"
+              >
+                <span className="font-medium text-stone-900 pr-4 text-sm">{faq.question}</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-stone-400 flex-shrink-0 transition-transform duration-200 ${
+                    openIndex === index ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <motion.div
+                initial={false}
+                animate={openIndex === index ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <p className="px-5 pb-5 text-stone-600 text-sm leading-relaxed">{faq.answer}</p>
+              </motion.div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// CTA Section
+function CTASection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  return (
+    <section ref={ref} className="relative py-24 bg-stone-50">
+      <div className="max-w-3xl mx-auto px-6 text-center">
+        <motion.div initial="hidden" animate={isInView ? 'visible' : 'hidden'} variants={staggerContainer}>
+          <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-stone-900 mb-4">
+            Ready to unlock your deepest focus?
+          </motion.h2>
+
+          <motion.p variants={fadeInUp} className="text-lg text-stone-600 mb-8 max-w-xl mx-auto">
+            Join thousands of developers, writers, and creators who have transformed their productivity with Stride.
+          </motion.p>
+
+          <motion.div variants={fadeInUp}>
+            <a
+              href="/signup"
+              className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-teal-700 rounded-lg hover:bg-emerald-800 transition-colors"
+            >
+              Start Your Free Trial
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </a>
+          </motion.div>
+
+          <motion.p variants={fadeInUp} className="mt-4 text-sm text-stone-500">
+            No credit card required. 14-day free trial.
+          </motion.p>
+        </motion.div>
       </div>
     </section>
   );
@@ -599,25 +870,64 @@ function FinalCTASection() {
 
 // Footer
 function Footer() {
+  const footerLinks = {
+    Product: ['Features', 'Pricing', 'Integrations', 'Changelog'],
+    Company: ['About', 'Blog', 'Careers', 'Press'],
+    Resources: ['Documentation', 'Help Center', 'Community', 'Contact'],
+    Legal: ['Privacy', 'Terms', 'Security'],
+  };
+
   return (
-    <footer className="py-12 bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-white" />
+    <footer className="relative py-12 border-t border-stone-200 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+          {/* Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <a href="#" className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-teal-700 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-lg font-semibold text-stone-900">Stride</span>
+            </a>
+            <p className="text-stone-500 text-sm">Your AI-powered focus companion.</p>
+          </div>
+
+          {/* Links */}
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h4 className="text-stone-900 font-medium text-sm mb-3">{category}</h4>
+              <ul className="space-y-2">
+                {links.map((link) => (
+                  <li key={link}>
+                    <a href="#" className="text-stone-500 hover:text-teal-700 transition-colors text-sm">
+                      {link}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <span className="font-semibold text-lg">Stride</span>
-          </div>
+          ))}
+        </div>
 
-          <div className="flex gap-8 text-sm text-gray-400">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="https://twitter.com" target="_blank" className="hover:text-white transition-colors">Twitter</a>
-          </div>
-
-          <div className="text-sm text-gray-500">
-            © 2026 Stride. Built in public.
+        {/* Bottom */}
+        <div className="pt-8 border-t border-stone-200 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-stone-500 text-sm">2025 Stride. All rights reserved.</p>
+          <div className="flex items-center gap-5">
+            <a href="#" className="text-stone-400 hover:text-teal-700 transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+            <a href="#" className="text-stone-400 hover:text-teal-700 transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+              </svg>
+            </a>
+            <a href="#" className="text-stone-400 hover:text-teal-700 transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
@@ -625,4 +935,20 @@ function Footer() {
   );
 }
 
-// Features Section (continued in next message due to length...)
+// Main Page Component
+export default function StrideLandingPage() {
+  return (
+    <main className="bg-white text-stone-900 overflow-x-hidden">
+      <Navbar />
+      <HeroSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <StatsSection />
+      <TestimonialsSection />
+      <PricingSection />
+      <FAQSection />
+      <CTASection />
+      <Footer />
+    </main>
+  );
+}

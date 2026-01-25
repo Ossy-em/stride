@@ -20,30 +20,79 @@ export async function POST(request: NextRequest) {
       );
     }
 
-
-    const { error: userError } = await supabase
+    // ENSURE USER EXISTS IN YOUR USERS TABLE (PRODUCTION-SAFE VERSION)
+    const { data: existingUser } = await supabase
       .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image,
-      }, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      });
+      .select('id')
+      .eq('email', user.email)
+      .maybeSingle();
 
-    if (userError) {
-      console.error('Failed to ensure user exists:', userError);
-
+    if (existingUser && existingUser.id !== user.id) {
+      // ID mismatch - delete old user and create new one with correct ID
+      console.log(`⚠️ User ID mismatch for ${user.email}. Migrating to new ID...`);
+      
+      // Delete old user (cascade deletes sessions, interventions, etc.)
+      await supabase
+        .from('users')
+        .delete()
+        .eq('email', user.email);
+      
+      // Insert new user with NextAuth's ID
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        });
+        
+      if (insertError) {
+        console.error('Failed to create user:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to create user' },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`✅ User ${user.email} migrated to new ID`);
+    } else if (!existingUser) {
+      // User doesn't exist - create them
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        });
+        
+      if (insertError) {
+        console.error('Failed to create user:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to create user' },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`✅ New user ${user.email} created`);
     } else {
-      console.log(`✅ User ${user.email} synced to users table`);
+      // User exists with correct ID - update metadata
+      await supabase
+        .from('users')
+        .update({
+          name: user.name,
+          image: user.image,
+        })
+        .eq('id', user.id);
+        
+      console.log(`✅ User ${user.email} synced`);
     }
 
+    // NOW CREATE THE SESSION
     const body = await request.json();
     const { taskDescription, taskType, plannedDuration } = startSessionSchema.parse(body);
 
-    // Create session with real user ID
     const { data: session, error } = await supabase
       .from('sessions')
       .insert({
