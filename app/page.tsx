@@ -24,7 +24,7 @@ import {
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] as const } },
 };
 
 const staggerContainer = {
@@ -203,7 +203,7 @@ function HeroSection() {
             {/* CTA Buttons */}
             <motion.div variants={fadeInUp} className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <a
-                href="/signup"
+                href="/auth/signin"
                 className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-teal-700 rounded-lg hover:bg-emerald-800 transition-colors"
               >
                 Start Free Trial
