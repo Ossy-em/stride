@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { evaluateInterventionQuality } from '@/lib/evaluators';
 
 const respondSchema = z.object({
   interventionId: z.string().uuid(),
@@ -11,10 +12,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { interventionId, action } = respondSchema.parse(body);
-    // Fetch intervention to verify it exists
+
+    // Get the intervention details first
     const { data: intervention, error: fetchError } = await supabase
       .from('interventions')
-      .select('session_id')
+      .select(`
+        *,
+        sessions!inner(
+          task_type,
+          planned_duration,
+          started_at,
+          user_id
+        )
+      `)
       .eq('id', interventionId)
       .single();
 
@@ -23,24 +33,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Intervention not found' }, { status: 404 });
     }
 
-    // Get the most recent check-in BEFORE this intervention to capture "before" state
-    const { data: recentCheckin } = await supabase
-      .from('checkins')
-      .select('response')
-      .eq('session_id', intervention.session_id)
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Calculate elapsed minutes
+    const elapsedMinutes = Math.floor(
+      (Date.now() - new Date(intervention.triggered_at).getTime()) / (1000 * 60)
+    );
 
-    // Update intervention with user action and "before" focus state
+    // Simple effectiveness: accepted = effective
+    const effective = action === 'accepted';
+
+    // Update intervention with user action and effectiveness
     const { error } = await supabase
       .from('interventions')
       .update({
         user_action: action,
-        // Store metadata for later effectiveness calculation
-        metadata: {
-          focus_before: recentCheckin?.response || 'neutral'
-        }
+        effective: effective,
       })
       .eq('id', interventionId);
 
@@ -49,7 +55,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
     }
 
-    console.log(`📝 Intervention ${interventionId}: User ${action} (focus_before: ${recentCheckin?.response || 'neutral'})`);
+    console.log(`📝 Intervention ${interventionId}: User ${action} → ${effective ? 'Effective' : 'Not effective'}`);
+
+    // LLM-as-Judge Evaluation (async, don't wait)
+    evaluateInterventionQuality({
+      intervention: intervention.message,
+      context: {
+        taskType: intervention.sessions.task_type,
+        elapsedMinutes,
+        plannedDuration: intervention.sessions.planned_duration,
+        checkpoint: intervention.checkpoint,
+        variant: intervention.variant_type,
+      },
+      userResponse: action,
+      userId: intervention.sessions.user_id,
+      sessionId: intervention.session_id,
+    }).catch(err => console.error('Evaluation failed:', err));
 
     return NextResponse.json({ success: true });
   } catch (error) {
