@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CheckCircle2, Trash2, Save, Sparkles } from 'lucide-react';
 
 interface EndSessionModalProps {
   sessionId: string;
@@ -41,7 +42,6 @@ export default function EndSessionModal({
 
       if (!response.ok) throw new Error('Failed to end session');
 
-      // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
       console.error('Error ending session:', error);
@@ -56,143 +56,209 @@ export default function EndSessionModal({
     }
   };
 
-
+  // Updated gradient colors to match landing page palette
   const getGradientColor = (value: number) => {
+    if (value <= 4) return '#f59e0b'; // amber-500 (warning/low)
+    if (value <= 7) return '#84cc16'; // lime-500 (good)
+    return '#65a30d'; // lime-600 (excellent)
+  };
 
-    if (value <= 4) return '#F59E0B'; 
-    if (value <= 7) return '#5DD9D8'; 
-    return '#0D7377'; 
+  const getFocusLabel = (value: number) => {
+    if (value <= 3) return 'Struggling';
+    if (value <= 5) return 'Moderate';
+    if (value <= 7) return 'Good';
+    if (value <= 9) return 'Excellent';
+    return 'Perfect';
   };
 
   return (
-    <div className="modal-backdrop animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-[#0f2a1f]/80 backdrop-blur-sm"
+        onClick={handleDiscard}
+      />
+      
+      {/* Modal */}
       <form 
         onSubmit={handleSubmit}
-        className="card max-w-lg w-full mx-4 animate-slide-up"
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
       >
-  
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <svg 
-              className="w-6 h-6 text-teal-500" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M5 13l4 4L19 7" 
-              />
-            </svg>
-            <h2 className="text-2xl font-semibold">Session Complete</h2>
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-br from-[#0f2a1f] via-[#143527] to-[#1a4a35] px-6 py-8 relative overflow-hidden">
+          {/* Subtle radial overlay */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(132,204,22,0.15)_0%,_transparent_60%)]" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-lime-400 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-[#1a3a2f]" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">Session Complete</h2>
+            </div>
+            <p className="text-white/60 text-sm">
+              <span className="text-lime-400 font-medium">{elapsedMinutes} minutes</span> focused on: {taskDescription}
+            </p>
           </div>
-          <p className="text-secondary text-sm">
-            {elapsedMinutes} minutes focused on: {taskDescription}
-          </p>
         </div>
 
-    
-        <div className="mb-6">
-          <label className="label">
-            How was your focus quality?
-          </label>
-          <div className="relative pt-6 pb-2">
- 
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={formData.focusQuality}
-              onChange={(e) => setFormData({ ...formData, focusQuality: parseInt(e.target.value) })}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #F59E0B 0%, #5DD9D8 50%, #0D7377 100%)`,
-              }}
-            />
+        {/* Form Content */}
+        <div className="p-6 space-y-6">
+          
+          {/* Focus Quality Slider */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              How was your focus quality?
+            </label>
             
-
-            <div 
-              className="absolute top-0 left-1/2 transform -translate-x-1/2"
-              style={{
-                left: `${((formData.focusQuality - 1) / 9) * 100}%`,
-              }}
-            >
-              <div 
-                className="text-2xl font-semibold px-3 py-1 rounded-lg"
-                style={{ 
-                  color: getGradientColor(formData.focusQuality),
-                }}
+            {/* Current value display - fixed position above slider */}
+            <div className="flex items-center justify-center gap-2 mb-4 py-2">
+              <span 
+                className="text-3xl font-bold tabular-nums"
+                style={{ color: getGradientColor(formData.focusQuality) }}
               >
                 {formData.focusQuality}
-              </div>
+              </span>
+              <span 
+                className="text-sm font-medium px-2 py-0.5 rounded-full"
+                style={{ 
+                  color: getGradientColor(formData.focusQuality),
+                  backgroundColor: `${getGradientColor(formData.focusQuality)}15`,
+                }}
+              >
+                {getFocusLabel(formData.focusQuality)}
+              </span>
             </div>
 
+            {/* Custom Range Slider */}
+            <div className="relative">
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={formData.focusQuality}
+                onChange={(e) => setFormData({ ...formData, focusQuality: parseInt(e.target.value) })}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none"
+                style={{
+                  background: `linear-gradient(to right, #f59e0b 0%, #84cc16 50%, #65a30d 100%)`,
+                }}
+              />
+            </div>
 
-            <div className="flex justify-between text-xs text-secondary mt-2">
+            {/* Labels */}
+            <div className="flex justify-between text-xs text-gray-400 mt-3">
               <span>1 (Distracted)</span>
-              <span>10 (Perfect Focus)</span>
+              <span>10 (Deep Focus)</span>
+            </div>
+          </div>
+
+          {/* Distraction Count */}
+          <div>
+            <label htmlFor="distractions" className="block text-sm font-medium text-gray-700 mb-2">
+              How many times were you distracted?
+            </label>
+            <input
+              id="distractions"
+              type="number"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 transition-all"
+              value={formData.distractionCount}
+              onChange={(e) => setFormData({ ...formData, distractionCount: parseInt(e.target.value) || 0 })}
+              min={0}
+              max={99}
+            />
+          </div>
+
+          {/* Outcome Textarea */}
+          <div>
+            <label htmlFor="outcome" className="block text-sm font-medium text-gray-700 mb-2">
+              What did you accomplish?
+            </label>
+            <div className="relative">
+              <textarea
+                id="outcome"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 transition-all resize-none"
+                rows={3}
+                placeholder="e.g., Finished design mockups, outlined blog post..."
+                value={formData.outcome}
+                onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
+                maxLength={500}
+              />
+              {formData.outcome.length > 0 && (
+                <div className="absolute bottom-3 right-3 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-lime-500" />
+                  <span className="text-xs text-gray-400">
+                    {formData.outcome.length}/500
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-
-        <div className="mb-6">
-          <label htmlFor="distractions" className="label">
-            How many times were you distracted?
-          </label>
-          <input
-            id="distractions"
-            type="number"
-            className="input"
-            value={formData.distractionCount}
-            onChange={(e) => setFormData({ ...formData, distractionCount: parseInt(e.target.value) || 0 })}
-            min={0}
-            max={99}
-          />
-        </div>
-
-
-        <div className="mb-8">
-          <label htmlFor="outcome" className="label">
-            What did you accomplish?
-          </label>
-          <textarea
-            id="outcome"
-            className="input resize-none"
-            rows={3}
-            placeholder="e.g., Finished design mockups, outlined blog post..."
-            value={formData.outcome}
-            onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
-            maxLength={500}
-          />
-          {formData.outcome.length > 10 && (
-            <p className="text-xs text-secondary text-right mt-1">
-              {formData.outcome.length}/500
-            </p>
-          )}
-        </div>
-
-
-        <div className="flex gap-3">
+        {/* Action Buttons */}
+        {/* Action Buttons - stack on very small screens */}
+        <div className="px-6 pb-6 flex flex-col sm:flex-row gap-3">
           <button
             type="button"
             onClick={handleDiscard}
             disabled={loading}
-            className="btn-ghost flex-1"
+            className="sm:flex-1 flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            Discard
+            <Trash2 className="w-4 h-4 flex-shrink-0" />
+            <span>Discard</span>
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary flex-1"
+            className="sm:flex-1 flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium text-[#1a3a2f] bg-lime-400 rounded-full hover:bg-lime-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {loading ? 'Saving...' : 'Save Session'}
+            {loading ? (
+              <>
+                <svg className="animate-spin w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 flex-shrink-0" />
+                <span>Save</span>
+              </>
+            )}
           </button>
         </div>
       </form>
+
+      {/* Custom slider thumb styles */}
+      <style jsx>{`
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #1a3a2f;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          transition: transform 0.15s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #1a3a2f;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
     </div>
   );
 }

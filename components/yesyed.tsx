@@ -26,10 +26,28 @@ import {
   MapPin,
 } from 'lucide-react';
 
+/*
+================================================================================
+IMAGE GENERATION GUIDE FOR AI TOOLS
+================================================================================
+
+This landing page requires the following images. Use these detailed descriptions
+with AI image generation tools (Midjourney, DALL-E, Ideogram, etc.)
+
+COLOR PALETTE TO USE:
+- Primary Dark Green: #1a3a2f (deep forest green)
+- Primary Light Green: #84cc16 (lime/chartreuse accent)
+- Background Gradient: Dark green (#0f2a1f) to lighter green (#1a4a35)
+- UI Elements: White cards with subtle shadows
+- Text: White on dark, #374151 (gray-700) on light
+
+--------------------------------------------------------------------------------
+*/
+
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] as const } }, 
 };
 
 const staggerContainer = {
@@ -144,7 +162,7 @@ function HeroSection() {
     <section className="relative min-h-screen pt-20 pb-12 overflow-hidden bg-gradient-to-b from-[#0f2a1f] via-[#143527] to-[#1a4a35]">
       {/* Subtle radial gradient overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(132,204,22,0.1)_0%,_transparent_60%)]" />
-
+      
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Social Proof Badge */}
         <motion.div
@@ -156,34 +174,23 @@ function HeroSection() {
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/10">
             {/* Avatar Stack */}
             <div className="flex -space-x-2">
-              <Image
-                src="/assets/avatars/avatar-1.png"
-                alt="User"
-                width={28}
-                height={28}
-                className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
-              />
-              <Image
-                src="/assets/avatars/avatar-2.png"
-                alt="User"
-                width={28}
-                height={28}
-                className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
-              />
-              <Image
-                src="/assets/avatars/avatar-3.png"
-                alt="User"
-                width={28}
-                height={28}
-                className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
-              />
-              <Image
-                src="/assets/avatars/avatar-4.png"
-                alt="User"
-                width={28}
-                height={28}
-                className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
-              />
+              {/*
+              IMAGE 1: AVATAR STACK (4 small circles)
+              ----------------------------------------
+              Generate: 4 professional headshot photos of diverse people
+              - Style: Clean, professional LinkedIn-style headshots
+              - Lighting: Soft, natural lighting
+              - Background: Neutral or slightly blurred
+              - Size: 32x32px each, circular crop
+              - People: Mix of genders and ethnicities, friendly expressions
+              - Colors: Natural skin tones, professional attire
+              */}
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-7 h-7 rounded-full border-2 border-[#143527] bg-gradient-to-br from-lime-300 to-green-500"
+                />
+              ))}
             </div>
             <span className="text-sm text-white/80">2k+ users staying focused</span>
             <a href="#testimonials" className="text-sm text-lime-400 hover:text-lime-300 flex items-center gap-1">
@@ -245,8 +252,19 @@ function HeroSection() {
         >
           <div className="relative max-w-5xl mx-auto">
             {/* Floating UI Cards - Left Side */}
-           <div className="absolute left-0 top-1/4 -translate-x-1/4 z-20 hidden lg:block">
-            
+            <div className="absolute left-0 top-1/4 -translate-x-1/4 z-20 hidden lg:block">
+              {/*
+              IMAGE 2: FLOATING ANALYTICS CARD (Left)
+              ----------------------------------------
+              Generate: A dark-themed analytics card/widget
+              - Style: Modern SaaS dashboard card, 3D perspective tilt (rotated ~15deg)
+              - Content: Line chart showing "Focus Sessions" trending upward
+              - Colors: Dark green background (#1a3a2f), lime green (#84cc16) chart line
+              - Text: "Focus Sessions" header, "+2,531" metric in lime green
+              - Size: ~200x150px
+              - Effects: Subtle drop shadow, slight glow on the lime elements
+              - Details: Small data points on the chart, grid lines barely visible
+              */}
               <div className="w-48 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform -rotate-6">
                 <p className="text-xs text-white/50 mb-1">Focus Sessions</p>
                 <p className="text-xl font-bold text-lime-400">+2,531</p>
@@ -260,7 +278,18 @@ function HeroSection() {
 
             {/* Floating UI Cards - Right Side */}
             <div className="absolute right-0 top-1/3 translate-x-1/4 z-20 hidden lg:block">
-            
+              {/*
+              IMAGE 3: FLOATING STATS CARD (Right)
+              ----------------------------------------
+              Generate: A dark-themed stats/metrics card
+              - Style: Modern SaaS widget, 3D perspective tilt (rotated ~10deg opposite direction)
+              - Content: "Deep Work Hours" with donut chart or progress ring
+              - Colors: Dark green background, lime green accent, white text
+              - Metrics: "74%" in large text, "This week" subtext
+              - Size: ~180x140px
+              - Effects: Soft shadow, glassmorphism hint
+              - Details: Progress ring ~74% filled in lime green
+              */}
               <div className="w-44 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform rotate-6">
                 <p className="text-xs text-white/50 mb-2">Deep Work Score</p>
                 <div className="flex items-center gap-3">
@@ -287,41 +316,42 @@ function HeroSection() {
             </div>
 
             {/* Central Phone Mockups */}
-            <div className="flex justify-center items-end gap-2">
-              {/* Left Phone */}
-              <div className="w-40 sm:w-52 transform -rotate-6 translate-y-8 opacity-80">
-                <Image
-                  src="/assets/hero-phone-left.png"
-                  alt="Focus lifestyle content"
-                  width={250}
-                  height={530}
-                  className="w-full rounded-3xl"
-                />
-              </div>
-
-              {/* Center Phone */}
-         <div className="w-3xl sm:w-96 z-10 overflow-visible bg-amber-50">
-  <Image
-    src="/assets/test/hero-phone4.png"
-    alt="Stride App"
-    width={900}
-    height={800}
-    className="w-full scale-125 sm:scale-110"
-    priority
-  />
+          {/* Central Phone Mockups */}
+<div className="flex justify-center items-end gap-4">
+  {/* Left Phone */}
+  <div className="w-40 sm:w-52 transform -rotate-6 translate-y-8 opacity-80">
+    <Image
+      src="/assets/hero-phone-left.png"
+      alt="Focus lifestyle content"
+      width={250}
+      height={530}
+      className="w-full rounded-3xl"
+    />
+  </div>
+  
+  {/* Center Phone - Your existing hero phone */}
+  <div className="w-52 sm:w-72 z-10">
+    <Image
+      src="/assets/hero-phone.png"
+      alt="Stride App"
+      width={300}
+      height={600}
+      className="w-full"
+      priority
+    />
+  </div>
+  
+  {/* Right Phone */}
+  <div className="w-40 sm:w-52 transform rotate-6 translate-y-8 opacity-80">
+    <Image
+      src="/assets/hero-phone-right.png"
+      alt="Productivity lifestyle content"
+      width={250}
+      height={530}
+      className="w-full rounded-3xl"
+    />
+  </div>
 </div>
-
-              {/* Right Phone */}
-              <div className="w-40 sm:w-52 transform rotate-6 translate-y-8 opacity-80">
-                <Image
-                  src="/assets/hero-phone-right.png"
-                  alt="Productivity lifestyle content"
-                  width={250}
-                  height={530}
-                  className="w-full rounded-3xl"
-                />
-              </div>
-            </div>
           </div>
         </motion.div>
       </div>
@@ -331,27 +361,28 @@ function HeroSection() {
 
 // Logo Bar Section
 function LogoBar() {
-  const companies = [
-    { name: 'Flowstate', logo: '/assets/logos/flowstate.svg' },
-    { name: 'DeepMind Labs', logo: '/assets/logos/deepmind-labs.svg' },
-    { name: 'Zenith', logo: '/assets/logos/zenith.svg' },
-    { name: 'Focusly', logo: '/assets/logos/focusly.svg' },
-    { name: 'Chronos', logo: '/assets/logos/chronos.svg' },
-  ];
+  /*
+  IMAGE 5: COMPANY LOGOS (5-6 logos)
+  ----------------------------------------
+  Generate: Fictional tech company logos in grayscale
+  - Style: Modern, minimal tech startup logos
+  - Names: "Flowstate", "DeepMind Labs", "Zenith", "Focusly", "Chronos"
+  - Colors: Gray/charcoal on white background
+  - Size: ~120x40px each
+  - Effects: Slight opacity (70-80%)
+  - Note: These should look like real SaaS/tech company logos
+  */
+  const companies = ['Flowstate', 'DeepMind Labs', 'Zenith', 'Focusly', 'Chronos'];
 
   return (
     <section className="py-12 bg-white border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60">
           {companies.map((company) => (
-            <Image
-              key={company.name}
-              src={company.logo}
-              alt={company.name}
-              width={120}
-              height={40}
-              className="h-8 w-auto grayscale"
-            />
+            <div key={company} className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-gray-300" />
+              <span className="text-sm font-medium text-gray-600">{company}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -418,6 +449,18 @@ function BentoFeatures() {
             <p className="text-sm text-gray-600 mb-4">
               Track your focus sessions and optimize them with AI-powered insights.
             </p>
+            {/*
+            IMAGE 6: ANALYTICS BAR CHART
+            ----------------------------------------
+            Generate: Clean bar chart visualization
+            - Style: Modern, minimal chart design
+            - Content: Vertical bars showing weekly focus data
+            - Colors: Lime green (#84cc16) bars on light gray background
+            - Labels: Days of week (M, T, W, T, F, S, S) at bottom
+            - Highlight: One bar with "87% accuracy" badge/tooltip
+            - Size: ~280x160px
+            - Effects: Subtle grid lines, one bar highlighted brighter
+            */}
             <div className="h-40 bg-white rounded-2xl border border-gray-100 flex items-end justify-around p-4">
               {[45, 65, 50, 85, 70, 90, 60].map((h, i) => (
                 <div key={i} className="relative">
@@ -444,6 +487,17 @@ function BentoFeatures() {
             <p className="text-sm text-gray-600 mb-4">
               Connects with all your productivity tools.
             </p>
+            {/*
+            IMAGE 7: INTEGRATION ICONS GRID
+            ----------------------------------------
+            Generate: Grid of app/service icons
+            - Style: Rounded square icons, 2x3 or 3x2 grid
+            - Apps to show: Notion, Slack, Calendar, Spotify, Todoist, Linear
+            - Colors: Each icon in its brand color on white circular background
+            - Size: Each icon ~40x40px, grid ~180x120px total
+            - Effects: Subtle shadow on each icon
+            - Note: Can use actual brand logos or abstract representations
+            */}
             <div className="grid grid-cols-3 gap-3">
               {['N', 'S', 'C', 'Sp', 'T', 'L'].map((icon, i) => (
                 <div
@@ -465,6 +519,19 @@ function BentoFeatures() {
             <p className="text-sm text-gray-600 mb-4">
               AI predicts when you will lose focus before it happens.
             </p>
+            {/*
+            IMAGE 8: PREDICTION CURVE CHART
+            ----------------------------------------
+            Generate: Smooth line chart showing focus prediction
+            - Style: Clean curved line graph
+            - Content: Line that rises, plateaus, then shows "prediction zone"
+            - Colors: Lime green line, lighter green fill below, dotted line for prediction
+            - Labels: "Focus Level" on Y-axis, "Time" on X-axis
+            - Highlight: Shaded area showing "intervention window"
+            - Size: ~280x140px
+            - Effects: Gradient fill under the curve, smooth bezier curve
+            */}
+         
             <div className="h-32 bg-white rounded-2xl border border-gray-100 p-4 relative overflow-hidden">
               <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
                 <defs>
@@ -503,13 +570,25 @@ function BentoFeatures() {
             <p className="text-sm text-gray-600 mb-4">
               Personalized nudges from breathing exercises to movement prompts.
             </p>
-            <Image
-              src="/assets/features/lifestyle-intervention.jpg"
-              alt="Person taking mindful break at desk"
-              width={560}
-              height={200}
-              className="w-full h-48 object-cover rounded-2xl"
-            />
+            {/*
+            IMAGE 9: INTERVENTION LIFESTYLE IMAGE
+            ----------------------------------------
+            Generate: Wide lifestyle photo showing someone using the app
+            - Style: Editorial/lifestyle photography, warm natural lighting
+            - Scene: Person at a modern desk, taking a mindful break
+            - Subject: Young professional (25-35), relaxed posture, eyes closed or looking peaceful
+            - Environment: Clean, minimal workspace with plants, natural light from window
+            - Colors: Warm tones, should have some green elements (plants, subtle green accent)
+            - Device: Phone visible on desk showing Stride app interface
+            - Mood: Calm, productive, balanced
+            - Size: ~560x200px (wide format)
+            - Effects: Slight depth of field, focus on the person
+            */}
+            <div className="h-48 bg-gradient-to-br from-lime-50 to-green-50 rounded-2xl border border-gray-100 flex items-center justify-center">
+              <p className="text-gray-400 text-sm text-center px-8">
+                [Lifestyle image: Person at clean desk taking mindful break, warm lighting, plants visible, phone showing Stride app]
+              </p>
+            </div>
           </motion.div>
 
           {/* Card 5: All-in-one */}
@@ -521,14 +600,24 @@ function BentoFeatures() {
             <p className="text-sm text-gray-600 mb-4">
               No more endless add-ons, plugins and extensions.
             </p>
-            <div className="h-36 bg-white rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden">
-              <Image
-                src="/assets/features/growth-plant.png"
-                alt="Growth illustration"
-                width={200}
-                height={160}
-                className="w-auto h-32 object-contain"
-              />
+            {/*
+            IMAGE 10: ABSTRACT 3D ILLUSTRATION
+            ----------------------------------------
+            Generate: Abstract 3D illustration of growth/focus
+            - Style: Modern 3D render, soft/organic shapes
+            - Content: Plant growing from a pot, or abstract upward flowing shapes
+            - Colors: Lime green (#84cc16) main element, soft cream/white background
+            - Metaphor: Growth, natural progression, organic improvement
+            - Size: ~200x160px
+            - Effects: Soft shadows, slight glow, matte finish
+            - Note: Should feel modern and tech-forward, not clipart-y
+            */}
+            <div className="h-36 bg-white rounded-2xl border border-gray-100 flex items-center justify-center">
+              <div className="w-16 h-24 relative">
+                <div className="absolute bottom-0 w-12 h-8 bg-lime-100 rounded-lg mx-auto left-0 right-0" />
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-1 h-16 bg-lime-400 rounded-full" />
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-8 bg-lime-400 rounded-full" />
+              </div>
             </div>
           </motion.div>
         </motion.div>
@@ -550,7 +639,22 @@ function FeatureSections() {
         'Our AI learns your unique patterns and predicts distraction moments with 87% accuracy. Get timely interventions, not annoying interruptions.',
       benefits: ['Pattern Learning', 'Smart Timing', 'Zero Disruption'],
       imagePosition: 'right',
-      image: '/assets/features/feature-ai-prediction.png',
+      /*
+      IMAGE 11: FEATURE IMAGE 1 - AI PREDICTION
+      ----------------------------------------
+      Generate: 3D mockup of phone with floating UI elements
+      - Style: Clean product shot with floating interface elements
+      - Main element: iPhone showing Stride timer at "32:00"
+      - Floating elements: 
+        - Small notification card: "Focus dipping in 8 min"
+        - Brain icon with pulse lines
+        - Small chart showing focus curve
+      - Colors: Phone shows dark theme, floating elements have lime green accents
+      - Background: Very light gray or white
+      - Size: ~400x350px
+      - Effects: Soft shadows, elements appear to float at different depths
+      - Arrangement: Phone slightly angled, elements scattered around it
+      */
     },
     {
       badge: 'Smart Interventions',
@@ -559,7 +663,21 @@ function FeatureSections() {
         'From 2-minute breathing exercises to movement prompts and mindful micro-breaks. Each intervention is tailored to what works best for you.',
       benefits: ['Breathing Exercises', 'Movement Prompts', 'Micro-breaks'],
       imagePosition: 'left',
-      image: '/assets/features/feature-stretch.jpg',
+      /*
+      IMAGE 12: FEATURE IMAGE 2 - INTERVENTIONS
+      ----------------------------------------
+      Generate: Split image showing different intervention types
+      - Style: Lifestyle photography collage or single editorial image
+      - Content options:
+        Option A (Collage): 3 small images - person stretching, breathing, walking
+        Option B (Single): Person doing a desk stretch with phone visible
+      - Subject: Same or similar person as earlier images for consistency
+      - Environment: Modern office or home office setting
+      - Colors: Warm natural tones, some green plants, lime accents if possible
+      - Size: ~400x350px
+      - Effects: If collage, rounded corners on each image with small gaps
+      - Mood: Active, refreshed, energized but calm
+      */
     },
   ];
 
@@ -598,15 +716,16 @@ function FeatureSections() {
               </div>
 
               {/* Image */}
-              <div className={feature.imagePosition === 'left' ? 'md:order-1' : ''}>
-                <Image
-                  src={feature.image}
-                  alt={feature.title}
-                  width={400}
-                  height={350}
-                  className="w-full rounded-3xl"
-                />
-              </div>
+            <div className={feature.imagePosition === 'left' ? 'md:order-1' : ''}>
+  <Image
+    src="/assets/features/prediction-curve.png"
+    alt="AI focus prediction with floating UI elements"
+    width={400}
+    height={350}
+    className="w-full rounded-3xl"
+  />
+  
+</div>
             </motion.div>
           ))}
         </motion.div>
@@ -627,15 +746,39 @@ function TestimonialsSection() {
       quote:
         'Stride knows when I need a break before I do. My deep work sessions have doubled since I started using it.',
       category: 'Engineering Excellence',
-      image: '/assets/testimonials/sarah-chen.jpg',
+      /*
+      IMAGE 13: TESTIMONIAL PHOTO 1
+      ----------------------------------------
+      Generate: Professional headshot of Asian woman
+      - Style: Modern professional photo, slight smile
+      - Age: Late 20s to early 30s
+      - Attire: Casual professional (nice sweater or blouse)
+      - Background: Soft blur, neutral or office setting
+      - Lighting: Natural, soft lighting
+      - Expression: Confident, approachable
+      - Size: ~300x400px (portrait orientation)
+      - Effects: Slight vignette, color graded to feel warm
+      */
     },
     {
       name: 'Marcus Johnson',
       role: 'Content Creator',
       quote:
-        "As a writer, focus is everything. Stride's gentle interventions help me stay in the zone for hours.",
+        'As a writer, focus is everything. Stride\'s gentle interventions help me stay in the zone for hours.',
       category: 'Creative Flow',
-      image: '/assets/testimonials/marcus-johnson.jpg',
+      /*
+      IMAGE 14: TESTIMONIAL PHOTO 2
+      ----------------------------------------
+      Generate: Professional headshot of Black man
+      - Style: Creative professional vibe, authentic smile
+      - Age: Mid 30s
+      - Attire: Creative casual (nice t-shirt, maybe glasses)
+      - Background: Soft blur, hint of workspace/studio
+      - Lighting: Natural, slightly dramatic
+      - Expression: Warm, genuine
+      - Size: ~300x400px (portrait orientation)
+      - Effects: Similar color grading to other testimonial photos
+      */
     },
     {
       name: 'Elena Rodriguez',
@@ -643,7 +786,19 @@ function TestimonialsSection() {
       quote:
         'The analytics helped me understand my focus patterns. I now structure my entire day around my natural energy cycles.',
       category: 'Data-Driven Productivity',
-      image: '/assets/testimonials/elena-rodriguez.jpg',
+      /*
+      IMAGE 15: TESTIMONIAL PHOTO 3
+      ----------------------------------------
+      Generate: Professional headshot of Latina woman
+      - Style: Polished professional, confident pose
+      - Age: Early 30s
+      - Attire: Professional but modern (blazer or structured top)
+      - Background: Soft blur, clean office or modern space
+      - Lighting: Bright, clean lighting
+      - Expression: Thoughtful, professional
+      - Size: ~300x400px (portrait orientation)
+      - Effects: Consistent color grading with other photos
+      */
     },
   ];
 
@@ -679,13 +834,12 @@ function TestimonialsSection() {
               className="bg-white rounded-3xl overflow-hidden border border-gray-100"
             >
               {/* Image */}
-              <div className="aspect-[3/4] relative">
-                <Image
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  fill
-                  className="object-cover"
-                />
+              <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-gray-400 text-xs text-center px-4">
+                    [Professional headshot: {testimonial.name.split(' ')[0]}, confident expression]
+                  </p>
+                </div>
                 {/* Name Badge */}
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="bg-[#1a3a2f] rounded-xl px-4 py-3">
@@ -848,27 +1002,12 @@ function CTASection() {
               {/* Mini avatar row */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex -space-x-2">
-                  <Image
-                    src="/assets/avatars/avatar-1.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
-                  <Image
-                    src="/assets/avatars/avatar-2.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
-                  <Image
-                    src="/assets/avatars/avatar-3.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-[#143527] bg-gradient-to-br from-lime-300 to-green-500"
+                    />
+                  ))}
                 </div>
                 <span className="text-sm text-white/60">Join 2k+ focused professionals</span>
               </div>
@@ -891,6 +1030,22 @@ function CTASection() {
 
             {/* Dashboard Preview */}
             <div>
+              {/*
+              IMAGE 16: CTA DASHBOARD MOCKUP
+              ----------------------------------------
+              Generate: Dashboard/analytics screen mockup
+              - Style: Modern SaaS dashboard, floating at slight angle
+              - Content: 
+                - Large metric: "$123,340,528" or "2,847 hours saved"
+                - Line chart showing upward trend
+                - Small bar chart widget
+                - Progress rings or percentage indicators
+              - Colors: Dark background matching CTA section, lime green accents, white text
+              - Device: Can be laptop screen or floating browser window
+              - Size: ~450x300px
+              - Effects: Subtle glow, slight 3D tilt, soft shadow
+              - Note: Numbers should suggest productivity gains, not revenue
+              */}
               <div className="bg-[#0f2a1f] rounded-2xl border border-white/10 p-6 transform rotate-2">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-white/50">Total Focus Hours</span>

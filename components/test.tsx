@@ -29,7 +29,7 @@ import {
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1]as const  } },
 };
 
 const staggerContainer = {
@@ -245,49 +245,29 @@ function HeroSection() {
         >
           <div className="relative max-w-5xl mx-auto">
             {/* Floating UI Cards - Left Side */}
-           <div className="absolute left-0 top-1/4 -translate-x-1/4 z-20 hidden lg:block">
-            
-              <div className="w-48 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform -rotate-6">
-                <p className="text-xs text-white/50 mb-1">Focus Sessions</p>
-                <p className="text-xl font-bold text-lime-400">+2,531</p>
-                <div className="mt-3 h-16 bg-gradient-to-t from-lime-400/20 to-transparent rounded-lg flex items-end justify-around px-2">
-                  {[40, 60, 45, 80, 65, 90, 75].map((h, i) => (
-                    <div key={i} className="w-3 bg-lime-400/60 rounded-t" style={{ height: `${h}%` }} />
-                  ))}
-                </div>
-              </div>
+            <div className="absolute left-0 top-1/4 -translate-x-1/4 z-20 hidden lg:block">
+              <Image
+                src="/assets/hero-float-analytics.png"
+                alt="Focus Sessions Analytics"
+                width={200}
+                height={150}
+                className="w-48 transform -rotate-6"
+              />
             </div>
 
             {/* Floating UI Cards - Right Side */}
             <div className="absolute right-0 top-1/3 translate-x-1/4 z-20 hidden lg:block">
-            
-              <div className="w-44 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform rotate-6">
-                <p className="text-xs text-white/50 mb-2">Deep Work Score</p>
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12">
-                    <svg className="w-12 h-12 -rotate-90">
-                      <circle cx="24" cy="24" r="20" fill="none" stroke="#ffffff10" strokeWidth="4" />
-                      <circle
-                        cx="24"
-                        cy="24"
-                        r="20"
-                        fill="none"
-                        stroke="#84cc16"
-                        strokeWidth="4"
-                        strokeDasharray={`${74 * 1.26} 126`}
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">74%</p>
-                    <p className="text-xs text-white/40">This week</p>
-                  </div>
-                </div>
-              </div>
+              <Image
+                src="/assets/hero-float-stats.png"
+                alt="Deep Work Score"
+                width={180}
+                height={140}
+                className="w-44 transform rotate-6"
+              />
             </div>
 
             {/* Central Phone Mockups */}
-            <div className="flex justify-center items-end gap-2">
+            <div className="flex justify-center items-end gap-4">
               {/* Left Phone */}
               <div className="w-40 sm:w-52 transform -rotate-6 translate-y-8 opacity-80">
                 <Image
@@ -300,16 +280,16 @@ function HeroSection() {
               </div>
 
               {/* Center Phone */}
-         <div className="w-3xl sm:w-96 z-10 overflow-visible bg-amber-50">
-  <Image
-    src="/assets/test/hero-phone4.png"
-    alt="Stride App"
-    width={900}
-    height={800}
-    className="w-full scale-125 sm:scale-110"
-    priority
-  />
-</div>
+              <div className="w-52 sm:w-72 z-10">
+                <Image
+                  src="/assets/hero-phone.png"
+                  alt="Stride App"
+                  width={300}
+                  height={600}
+                  className="w-full"
+                  priority
+                />
+              </div>
 
               {/* Right Phone */}
               <div className="w-40 sm:w-52 transform rotate-6 translate-y-8 opacity-80">

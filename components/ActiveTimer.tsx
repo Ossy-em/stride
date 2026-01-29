@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Square } from 'lucide-react';
+import { Square, Sparkles } from 'lucide-react';
 import CheckInModal from './CheckInModal';
 import InterventionNotification from './InterventionNotification';
 
@@ -27,7 +27,6 @@ export default function ActiveTimer({
 
   const CHECK_IN_INTERVAL = 20 * 60;
 
-
   useEffect(() => {
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => {
@@ -45,56 +44,53 @@ export default function ActiveTimer({
     return () => clearInterval(interval);
   }, [lastCheckInTime]);
 
+  useEffect(() => {
+    const checkForIntervention = async () => {
+      const elapsedMins = Math.floor(elapsedSeconds / 60);
+      
+      if (interventionCount >= 3) {
+        return;
+      }
+      
+      if (elapsedMins >= 1 && !showIntervention) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-useEffect(() => {
-  const checkForIntervention = async () => {
-    const elapsedMins = Math.floor(elapsedSeconds / 60);
-    
+          const response = await fetch('/api/interventions/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId,
+              elapsedMinutes: elapsedMins,
+            }),
+            signal: controller.signal, 
+          });
 
-    if (interventionCount >= 3) {
-      return;
-    }
-    
-    if (elapsedMins >= 1 && !showIntervention) {
-      try {
-        // ADD TIMEOUT: Abort if it takes longer than 15 seconds
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+          clearTimeout(timeoutId);
 
-        const response = await fetch('/api/interventions/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            elapsedMinutes: elapsedMins,
-          }),
-          signal: controller.signal, 
-        });
+          const data = await response.json();
 
-        clearTimeout(timeoutId); // Clear timeout if request completes
-
-        const data = await response.json();
-
-        if (data.needed && data.intervention) {
-          setIntervention(data.intervention);
-          setShowIntervention(true);
-          setInterventionCount(prev => prev + 1);
-          console.log(`🎯 Intervention ${interventionCount + 1}/3 fired (${data.intervention.checkpoint}):`, data.intervention.message);
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.log('⏱️ Intervention check timed out (took >15s), will retry next minute');
-        } else {
-          console.error('Error checking intervention:', error);
+          if (data.needed && data.intervention) {
+            setIntervention(data.intervention);
+            setShowIntervention(true);
+            setInterventionCount(prev => prev + 1);
+            console.log(`🎯 Intervention ${interventionCount + 1}/3 fired (${data.intervention.checkpoint}):`, data.intervention.message);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            console.log('⏱️ Intervention check timed out (took >15s), will retry next minute');
+          } else {
+            console.error('Error checking intervention:', error);
+          }
         }
       }
-    }
-  };
+    };
 
-  if (elapsedSeconds > 0 && elapsedSeconds % 60 === 0) {
-    checkForIntervention();
-  }
-}, [elapsedSeconds, sessionId, showIntervention, interventionCount]);
+    if (elapsedSeconds > 0 && elapsedSeconds % 60 === 0) {
+      checkForIntervention();
+    }
+  }, [elapsedSeconds, sessionId, showIntervention, interventionCount]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -110,98 +106,171 @@ useEffect(() => {
     router.push(`/session/end?id=${sessionId}`);
   };
 
+  // TODO: DUMMY DATA - Replace with dynamic quotes from API or database
+  const focusQuote = "Focus is the gateway to excellence.";
+
   return (
     <>
-      <div className="timer-bg flex flex-col items-center justify-center min-h-screen relative overflow-hidden">
-      
+      {/* Main Timer Screen */}
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#0f2a1f] via-[#143527] to-[#1a4a35]">
+        
+        {/* Radial gradient overlay - matches landing page hero */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(132,204,22,0.1)_0%,_transparent_60%)]" />
+        
+        {/* Animated background orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse-gentle" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber/5 rounded-full blur-3xl animate-pulse-gentle" style={{ animationDelay: '2s' }} />
+          <div 
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-lime-400/5 rounded-full blur-3xl"
+            style={{ animation: 'pulse 4s ease-in-out infinite' }}
+          />
+          <div 
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-lime-400/5 rounded-full blur-3xl"
+            style={{ animation: 'pulse 4s ease-in-out infinite', animationDelay: '2s' }}
+          />
         </div>
 
-        <div className="relative z-10 flex flex-col items-center gap-12">
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-12 px-6">
+          
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-lime-400"></span>
+            </span>
+            <span className="text-sm text-white/80 font-medium">Focus Session Active</span>
+          </div>
+
+          {/* Timer Circle */}
           <div className="relative">
+            {/* Breathing rings */}
             <div 
-              className="absolute inset-0 rounded-full border-2 border-teal-500/20"
+              className="absolute rounded-full border border-lime-400/20"
               style={{
-                width: '320px',
-                height: '320px',
-                animation: 'breathe-ring 4s ease-in-out infinite',
+                width: '340px',
+                height: '340px',
+                top: '-10px',
+                left: '-10px',
+                animation: 'breathe 4s ease-in-out infinite',
               }}
             />
             <div 
-              className="absolute inset-0 rounded-full border-2 border-teal-500/10"
+              className="absolute rounded-full border border-lime-400/10"
               style={{
                 width: '380px',
                 height: '380px',
                 top: '-30px',
                 left: '-30px',
-                animation: 'breathe-ring 4s ease-in-out infinite',
+                animation: 'breathe 4s ease-in-out infinite',
                 animationDelay: '0.5s',
               }}
             />
 
+            {/* Main timer container */}
             <div className="relative w-80 h-80 flex items-center justify-center">
+              {/* Progress ring SVG */}
               <svg className="absolute inset-0 w-full h-full -rotate-90">
+                {/* Background circle */}
                 <circle
                   cx="160"
                   cy="160"
                   r="140"
                   stroke="currentColor"
-                  strokeWidth="3"
+                  strokeWidth="4"
                   fill="none"
-                  className="text-teal-500/10"
+                  className="text-white/10"
                 />
+                {/* Progress circle */}
                 <circle
                   cx="160"
                   cy="160"
                   r="140"
-                  stroke="currentColor"
-                  strokeWidth="3"
+                  stroke="url(#limeGradient)"
+                  strokeWidth="4"
                   fill="none"
                   strokeLinecap="round"
-                  className="text-teal-500 transition-all duration-1000"
+                  className="transition-all duration-1000 ease-out"
                   strokeDasharray={`${2 * Math.PI * 140}`}
                   strokeDashoffset={`${2 * Math.PI * 140 * (1 - progressPercentage / 100)}`}
                 />
+                {/* Gradient definition */}
+                <defs>
+                  <linearGradient id="limeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#84cc16" />
+                    <stop offset="100%" stopColor="#a3e635" />
+                  </linearGradient>
+                </defs>
               </svg>
 
+              {/* Timer display */}
               <div className="flex flex-col items-center">
-                <div className="timer-display animate-pulse-gentle">
+                <div className="text-6xl md:text-7xl font-bold text-white tracking-tight tabular-nums">
                   {formatTime(elapsedSeconds)}
                 </div>
-                <p className="text-secondary text-sm mt-2 font-medium">
-                  {remainingSeconds > 0 ? remainingFormatted : 'Complete!'}
-                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="text-white/50 text-sm font-medium">
+                    {remainingSeconds > 0 ? `${remainingFormatted} remaining` : 'Session Complete!'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="text-center max-w-md px-4">
-            <p className="text-secondary text-xs uppercase tracking-wider mb-2 font-medium">
-              In Focus
+          {/* Task Description */}
+          <div className="text-center max-w-md">
+            <p className="text-xs uppercase tracking-widest text-lime-400/80 font-medium mb-3">
+              Currently Focused On
             </p>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">
+            <h1 className="text-2xl md:text-3xl font-semibold text-white leading-tight">
               {taskDescription}
             </h1>
           </div>
 
+          {/* End Session Button */}
           <button
             onClick={handleEndSession}
-            className="group flex items-center gap-2 px-8 py-3.5 cursor-pointer rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-gray-700 dark:text-gray-200 font-medium hover:bg-white dark:hover:bg-gray-900 transition-all hover:shadow-lg border border-gray-200 dark:border-gray-700"
+            className="group flex items-center gap-3 px-8 py-3.5 cursor-pointer rounded-full bg-white/10 backdrop-blur-sm text-white font-medium hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/30"
           >
-            <Square className="w-4 h-4 group-hover:text-teal-500 transition-colors" />
-            End Session
+            <Square className="w-4 h-4 text-lime-400 group-hover:scale-110 transition-transform" />
+            <span>End Session</span>
           </button>
         </div>
 
-        <div className="absolute bottom-8 text-center px-4">
-          <p className="text-sm text-gray-400 dark:text-gray-600 italic max-w-md">
-            "Focus is the gateway to excellence."
-          </p>
+        {/* Bottom Quote - TODO: DUMMY DATA */}
+        <div className="absolute bottom-8 left-0 right-0 text-center px-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5">
+            <Sparkles className="w-3.5 h-3.5 text-lime-400/60" />
+            <p className="text-sm text-white/40 italic">
+              "{focusQuote}"
+            </p>
+          </div>
         </div>
       </div>
 
+      {/* CSS Keyframes - Add to your global CSS or keep inline */}
+      <style jsx>{`
+        @keyframes breathe {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 0.5;
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.5;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+      `}</style>
+
+      {/* Modals */}
       {showCheckIn && (
         <CheckInModal
           sessionId={sessionId}

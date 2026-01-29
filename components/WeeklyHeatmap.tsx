@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, TrendingUp } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3 } from 'lucide-react';
 import type { HeatmapCell } from '@/types';
 
 interface WeeklyHeatmapProps {
@@ -14,25 +14,27 @@ export default function WeeklyHeatmap({ data }: WeeklyHeatmapProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
 
   return (
-    <div className="card">
+    <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
       {/* Header with Tabs */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-teal-500" />
-          <h2 className="text-lg font-semibold">Focus Patterns</h2>
+          <div className="w-8 h-8 rounded-lg bg-lime-100 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-[#1a3a2f]" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900">Focus Patterns</h2>
         </div>
 
         {/* View Mode Tabs */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full">
           {(['week', 'month', 'year'] as ViewMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
               className={`
-                px-4 py-1.5 rounded-lg text-sm font-medium transition-all
+                px-4 py-1.5 rounded-full text-sm font-medium transition-all
                 ${viewMode === mode
-                  ? 'bg-white dark:bg-gray-700 text-teal-600 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  ? 'bg-white text-[#1a3a2f] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
                 }
               `}
             >
@@ -55,12 +57,13 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const timeBlocks = ['9am', '12pm', '3pm', '6pm', '9pm'];
 
+  // Updated colors to match landing page palette
   const getCellColor = (avgFocus: number, sessionCount: number) => {
-    if (sessionCount === 0) return '#F3F4F6';
-    if (avgFocus >= 8) return '#14B8A6';
-    if (avgFocus >= 6) return '#5EEAD4';
-    if (avgFocus >= 4) return '#99F6E4';
-    return '#FBBF24';
+    if (sessionCount === 0) return '#F3F4F6'; // gray-100
+    if (avgFocus >= 8) return '#65a30d'; // lime-600
+    if (avgFocus >= 6) return '#84cc16'; // lime-500
+    if (avgFocus >= 4) return '#bef264'; // lime-300
+    return '#fbbf24'; // amber-400
   };
 
   const getCellData = (day: string, time: string): HeatmapCell | undefined => {
@@ -77,7 +80,7 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
             {timeBlocks.map(time => (
               <div 
                 key={time} 
-                className="h-12 flex items-center justify-end text-xs text-secondary font-medium"
+                className="h-12 flex items-center justify-end text-xs text-gray-500 font-medium"
               >
                 {time}
               </div>
@@ -88,7 +91,7 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
           {days.map(day => (
             <div key={day} className="flex flex-col gap-1">
               {/* Day label */}
-              <div className="h-10 flex items-center justify-center text-xs font-semibold text-secondary">
+              <div className="h-10 flex items-center justify-center text-xs font-semibold text-gray-500">
                 {day}
               </div>
               
@@ -102,7 +105,7 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
                 return (
                   <div
                     key={`${day}-${time}`}
-                    className="w-12 h-12 rounded-lg transition-all duration-200 hover:ring-2 hover:ring-teal-500 hover:scale-105 cursor-pointer relative group"
+                    className="w-12 h-12 rounded-xl transition-all duration-200 hover:ring-2 hover:ring-lime-500 hover:scale-105 cursor-pointer relative group"
                     style={{ backgroundColor: color }}
                     title={
                       sessionCount > 0
@@ -112,10 +115,10 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
                   >
                     {/* Tooltip on hover */}
                     {sessionCount > 0 && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a3a2f] text-white text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                         <div className="font-semibold">{avgFocus.toFixed(1)}/10 Focus</div>
-                        <div className="text-gray-300">{sessionCount} session{sessionCount > 1 ? 's' : ''}</div>
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                        <div className="text-white/60">{sessionCount} session{sessionCount > 1 ? 's' : ''}</div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1a3a2f]" />
                       </div>
                     )}
                   </div>
@@ -126,13 +129,13 @@ function WeekView({ data }: { data: HeatmapCell[] }) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-6 mt-8 text-xs text-secondary">
+        <div className="flex items-center gap-6 mt-8 text-xs text-gray-500">
           <span className="font-medium">Less focused</span>
           <div className="flex gap-1.5">
-            <div className="w-5 h-5 rounded" style={{ backgroundColor: '#F3F4F6' }} />
-            <div className="w-5 h-5 rounded" style={{ backgroundColor: '#99F6E4' }} />
-            <div className="w-5 h-5 rounded" style={{ backgroundColor: '#5EEAD4' }} />
-            <div className="w-5 h-5 rounded" style={{ backgroundColor: '#14B8A6' }} />
+            <div className="w-5 h-5 rounded-lg" style={{ backgroundColor: '#F3F4F6' }} title="No sessions" />
+            <div className="w-5 h-5 rounded-lg" style={{ backgroundColor: '#bef264' }} title="4-6 focus" />
+            <div className="w-5 h-5 rounded-lg" style={{ backgroundColor: '#84cc16' }} title="6-8 focus" />
+            <div className="w-5 h-5 rounded-lg" style={{ backgroundColor: '#65a30d' }} title="8+ focus" />
           </div>
           <span className="font-medium">More focused</span>
         </div>
@@ -146,7 +149,7 @@ function MonthView() {
   const weeks = 4;
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   
-  // Mock data for now - in real app, would fetch from API
+  // TODO: DUMMY DATA - Replace with API fetch
   const generateMockMonthData = () => {
     const data = [];
     for (let week = 0; week < weeks; week++) {
@@ -166,18 +169,18 @@ function MonthView() {
 
   const getCellColor = (avgFocus: number, sessionCount: number) => {
     if (sessionCount === 0) return '#F3F4F6';
-    if (avgFocus >= 8) return '#14B8A6';
-    if (avgFocus >= 6) return '#5EEAD4';
-    if (avgFocus >= 4) return '#99F6E4';
-    return '#FBBF24';
+    if (avgFocus >= 8) return '#65a30d';
+    if (avgFocus >= 6) return '#84cc16';
+    if (avgFocus >= 4) return '#bef264';
+    return '#fbbf24';
   };
 
   return (
     <div>
       {/* Month header */}
       <div className="flex items-center gap-2 mb-6">
-        <Calendar className="w-5 h-5 text-teal-500" />
-        <h3 className="font-semibold text-lg">
+        <Calendar className="w-5 h-5 text-lime-600" />
+        <h3 className="font-semibold text-lg text-gray-900">
           {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </h3>
       </div>
@@ -187,7 +190,7 @@ function MonthView() {
         {/* Day labels */}
         <div className="grid grid-cols-7 gap-2 mb-3">
           {daysOfWeek.map((day, i) => (
-            <div key={i} className="text-center text-xs font-semibold text-secondary">
+            <div key={i} className="text-center text-xs font-semibold text-gray-500">
               {day}
             </div>
           ))}
@@ -203,20 +206,20 @@ function MonthView() {
               return (
                 <div
                   key={dayIndex}
-                  className="aspect-square rounded-lg transition-all duration-200 hover:ring-2 hover:ring-teal-500 hover:scale-105 cursor-pointer relative group"
+                  className="aspect-square rounded-xl transition-all duration-200 hover:ring-2 hover:ring-lime-500 hover:scale-105 cursor-pointer relative group"
                   style={{ backgroundColor: color }}
                 >
                   {/* Day number */}
-                  <div className="absolute top-1 left-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <div className="absolute top-1 left-1.5 text-xs font-medium text-gray-700">
                     {weekIndex * 7 + dayIndex + 1}
                   </div>
                   
                   {/* Tooltip */}
                   {cellData && cellData.sessionCount > 0 && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a3a2f] text-white text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                       <div className="font-semibold">{cellData.avgFocus.toFixed(1)}/10 Focus</div>
-                      <div className="text-gray-300">{cellData.sessionCount} sessions</div>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                      <div className="text-white/60">{cellData.sessionCount} sessions</div>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1a3a2f]" />
                     </div>
                   )}
                 </div>
@@ -226,19 +229,19 @@ function MonthView() {
         ))}
       </div>
 
-      {/* Stats summary */}
-      <div className="grid grid-cols-3 gap-4 mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+      {/* Stats summary - TODO: DUMMY DATA */}
+      <div className="grid grid-cols-3 gap-4 mt-6 p-4 bg-gray-50 rounded-2xl">
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">24</div>
-          <div className="text-xs text-secondary mt-1">Total Sessions</div>
+          <div className="text-2xl font-bold text-[#1a3a2f]">24</div>
+          <div className="text-xs text-gray-500 mt-1">Total Sessions</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">7.8</div>
-          <div className="text-xs text-secondary mt-1">Avg Focus</div>
+          <div className="text-2xl font-bold text-lime-600">7.8</div>
+          <div className="text-xs text-gray-500 mt-1">Avg Focus</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">18h</div>
-          <div className="text-xs text-secondary mt-1">Total Time</div>
+          <div className="text-2xl font-bold text-[#1a3a2f]">18h</div>
+          <div className="text-xs text-gray-500 mt-1">Total Time</div>
         </div>
       </div>
     </div>
@@ -252,11 +255,11 @@ function YearView() {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
-  // Mock data for each month
+  // TODO: DUMMY DATA - Replace with API fetch
   const generateYearData = () => {
-    return months.map((month, index) => ({
+    return months.map((month) => ({
       month,
-      avgFocus: 5 + Math.random() * 4, // 5-9 range
+      avgFocus: 5 + Math.random() * 4,
       sessionCount: Math.floor(10 + Math.random() * 30),
       totalHours: Math.floor(15 + Math.random() * 35),
     }));
@@ -269,21 +272,24 @@ function YearView() {
   };
 
   const getBarColor = (avgFocus: number) => {
-    if (avgFocus >= 8) return 'bg-teal-500';
-    if (avgFocus >= 6) return 'bg-teal-400';
-    if (avgFocus >= 4) return 'bg-amber';
-    return 'bg-coral';
+    if (avgFocus >= 8) return 'bg-lime-600';
+    if (avgFocus >= 6) return 'bg-lime-500';
+    if (avgFocus >= 4) return 'bg-amber-400';
+    return 'bg-red-400';
   };
 
   return (
     <div>
       {/* Year header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-lg">
-          {new Date().getFullYear()} Overview
-        </h3>
-        <div className="text-sm text-secondary">
-          Avg: <span className="font-semibold text-teal-500">7.2/10</span>
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-lime-600" />
+          <h3 className="font-semibold text-lg text-gray-900">
+            {new Date().getFullYear()} Overview
+          </h3>
+        </div>
+        <div className="text-sm text-gray-500">
+          Avg: <span className="font-semibold text-lime-600">7.2/10</span>
         </div>
       </div>
 
@@ -298,41 +304,41 @@ function YearView() {
                 style={{ height: getBarHeight(data.avgFocus) }}
               >
                 {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a3a2f] text-white text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                   <div className="font-semibold">{data.month} {new Date().getFullYear()}</div>
-                  <div className="text-gray-300 mt-1">Focus: {data.avgFocus.toFixed(1)}/10</div>
-                  <div className="text-gray-300">{data.sessionCount} sessions</div>
-                  <div className="text-gray-300">{data.totalHours}h total</div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                  <div className="text-white/60 mt-1">Focus: {data.avgFocus.toFixed(1)}/10</div>
+                  <div className="text-white/60">{data.sessionCount} sessions</div>
+                  <div className="text-white/60">{data.totalHours}h total</div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1a3a2f]" />
                 </div>
               </div>
             </div>
             
             {/* Month label */}
-            <div className="text-xs font-medium text-secondary">
+            <div className="text-xs font-medium text-gray-500">
               {data.month}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Year stats */}
-      <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+      {/* Year stats - TODO: DUMMY DATA */}
+      <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl">
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">287</div>
-          <div className="text-xs text-secondary mt-1">Total Sessions</div>
+          <div className="text-2xl font-bold text-[#1a3a2f]">287</div>
+          <div className="text-xs text-gray-500 mt-1">Total Sessions</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">7.2</div>
-          <div className="text-xs text-secondary mt-1">Yearly Avg</div>
+          <div className="text-2xl font-bold text-lime-600">7.2</div>
+          <div className="text-xs text-gray-500 mt-1">Yearly Avg</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-teal-500">215h</div>
-          <div className="text-xs text-secondary mt-1">Total Time</div>
+          <div className="text-2xl font-bold text-[#1a3a2f]">215h</div>
+          <div className="text-xs text-gray-500 mt-1">Total Time</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-amber">🔥 12</div>
-          <div className="text-xs text-secondary mt-1">Best Streak</div>
+          <div className="text-2xl font-bold text-amber-500">🔥 12</div>
+          <div className="text-xs text-gray-500 mt-1">Best Streak</div>
         </div>
       </div>
     </div>
