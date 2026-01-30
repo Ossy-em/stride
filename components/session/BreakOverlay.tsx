@@ -17,7 +17,7 @@ export default function BreakOverlay({
   const [secondsLeft, setSecondsLeft] = useState(duration);
   const [isExiting, setIsExiting] = useState(false);
 
-  // Countdown timer
+
   useEffect(() => {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
