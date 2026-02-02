@@ -6,17 +6,23 @@ export interface ABTestVariant {
   timingOffset: TimingOffset;
 }
 
-
-export function assignVariant(): ABTestVariant {
+/**
+ * Assign A/B test variant deterministically based on sessionId
+ * This ensures the same session always gets the same variant across all intervention checks
+ */
+export function assignVariant(sessionId: string): ABTestVariant {
+  // Use sessionId as seed for consistent assignment
+  const hash = sessionId.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
   const variants: MessageVariant[] = ['direct', 'question', 'challenge'];
   const timingOffsets: TimingOffset[] = [2, 5, 8];
   
-  const randomVariant = variants[Math.floor(Math.random() * variants.length)];
-  const randomTiming = timingOffsets[Math.floor(Math.random() * timingOffsets.length)];
-  
   return {
-    variantType: randomVariant,
-    timingOffset: randomTiming
+    variantType: variants[Math.abs(hash) % variants.length],
+    timingOffset: timingOffsets[Math.abs(hash >> 8) % timingOffsets.length],
   };
 }
 
@@ -24,7 +30,7 @@ export function applyTimingOffset(
   basePredictedMinutes: number,
   timingOffset: TimingOffset
 ): number {
-  // Intervene X minutes BEFORE the predicted drop time
+
   return Math.max(1, basePredictedMinutes - timingOffset);
 }
 
