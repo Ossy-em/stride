@@ -7,7 +7,6 @@ const opik = new Opik({
 });
 
 // CORE LOGGING FUNCTION
-
 export async function logAICall(params: {
   name: string;
   input: any;
@@ -90,6 +89,7 @@ export async function logEvaluation(params: {
 }
 
 // INTERVENTION OUTCOME LOGGING (for A/B analysis)
+
 export async function logInterventionOutcome(params: {
   interventionTraceId: string;
   sessionId: string;
@@ -163,6 +163,7 @@ export async function logInterventionOutcome(params: {
 }
 
 // ERROR/FALLBACK LOGGING
+
 export async function logAIError(params: {
   name: string;
   input: any;
