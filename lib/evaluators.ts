@@ -1,6 +1,20 @@
+import { z } from 'zod';
 import { callClaude } from './anthropic';
+import { logEvaluation } from './opik';
 
-// LLM-as-judge: Rate the quality of AI-generated insights
+
+// SCHEMAS
+
+const interventionQualitySchema = z.object({
+  helpfulness: z.number().min(1).max(5),
+  timing: z.number().min(1).max(5),
+  tone: z.number().min(1).max(5),
+  reasoning: z.string().optional(),
+});
+
+
+// INSIGHT QUALITY EVALUATION
+
 export async function evaluateInsightQuality(
   insights: string[],
   sessionData: any[]
@@ -35,34 +49,38 @@ Return ONLY a single number from 1-10. No explanation.`;
     );
 
     const score = parseInt(response.trim());
-    return isNaN(score) ? 5 : Math.max(1, Math.min(10, score)); // Clamp 1-10
+    const finalScore = isNaN(score) ? 5 : Math.max(1, Math.min(10, score));
+
+    return finalScore;
   } catch (error) {
     console.error('Error evaluating insight quality:', error);
-    return 5; // Default middle score
+    return 5;
   }
 }
 
-// Evaluate if a predicted intervention time was accurate
+
+// INTERVENTION ACCURACY EVALUATION
+
 export async function evaluateInterventionAccuracy(params: {
-  predictedMinutes: number; // When we predicted distraction
-  actualFocusQuality: number; // What user rated their focus
-  sessionDuration: number; // How long they actually worked
+  predictedMinutes: number;
+  actualFocusQuality: number;
+  sessionDuration: number;
 }): Promise<number> {
   const { predictedMinutes, actualFocusQuality, sessionDuration } = params;
 
   // If user ended session close to predicted time with low focus, prediction was accurate
   const timeDiff = Math.abs(sessionDuration - predictedMinutes);
-  const timeAccuracy = timeDiff <= 5 ? 1.0 : Math.max(0, 1 - (timeDiff / 30)); // Within 5 mins = perfect
+  const timeAccuracy = timeDiff <= 5 ? 1.0 : Math.max(0, 1 - timeDiff / 30);
 
   // If focus quality dropped (< 6), prediction was correct
   const focusAccuracy = actualFocusQuality < 6 ? 1.0 : 0.5;
 
-  // Combined score
   return (timeAccuracy + focusAccuracy) / 2;
 }
 
 
-// LLM-as-judge: Rate intervention quality after user responds
+// INTERVENTION QUALITY EVALUATION (LLM-as-Judge)
+
 export async function evaluateInterventionQuality(params: {
   intervention: string;
   context: {
@@ -81,9 +99,9 @@ export async function evaluateInterventionQuality(params: {
   tone: number;
   overall: number;
 }> {
-  try {
-    const { intervention, context, userResponse } = params;
+  const { intervention, context, userResponse, userId, sessionId } = params;
 
+  try {
     const prompt = `You are evaluating the quality of a focus intervention message.
 
 Context:
@@ -124,8 +142,8 @@ Return ONLY valid JSON (no markdown):
       'claude-3-haiku-20240307',
       {
         callType: 'intervention_quality_evaluation',
-        userId: params.userId,
-        sessionId: params.sessionId,
+        userId,
+        sessionId,
         checkpoint: context.checkpoint,
         variant: context.variant,
         userResponse,
@@ -133,14 +151,61 @@ Return ONLY valid JSON (no markdown):
       }
     );
 
-    // Parse JSON response
-    const cleaned = response.replace(/```json|```/g, '').trim(); 
-    const scores = JSON.parse(cleaned);
+    // Parse and validate JSON response
+    const cleaned = response.replace(/```json|```/g, '').trim();
+    const rawScores = JSON.parse(cleaned);
+    const scores = interventionQualitySchema.parse(rawScores);
 
     // Calculate overall score
     const overall = (scores.helpfulness + scores.timing + scores.tone) / 3;
 
-    console.log(`📊 Intervention Quality: ${overall.toFixed(1)}/5 (H:${scores.helpfulness} T:${scores.timing} To:${scores.tone}) - ${userResponse}`);
+    console.log(
+      `📊 Intervention Quality: ${overall.toFixed(1)}/5 (H:${scores.helpfulness} T:${scores.timing} To:${scores.tone}) - ${userResponse}`
+    );
+
+    
+    // LOG TO OPIK
+    
+    await logEvaluation({
+      name: 'intervention_quality',
+      traceId: `intervention_eval_${sessionId}_${Date.now()}`,
+      score: overall / 5, // Normalize to 0-1 for consistency
+      metadata: {
+        userId,
+        sessionId,
+        checkpoint: context.checkpoint,
+        variant: context.variant,
+        userResponse,
+        helpfulness: scores.helpfulness,
+        timing: scores.timing,
+        tone: scores.tone,
+        overall,
+        reasoning: scores.reasoning,
+        intervention_message: intervention,
+      },
+    });
+
+    // Log individual dimension scores for detailed analysis
+    await Promise.all([
+      logEvaluation({
+        name: 'intervention_helpfulness',
+        traceId: `intervention_eval_${sessionId}_${Date.now()}`,
+        score: scores.helpfulness / 5,
+        metadata: { userId, sessionId, checkpoint: context.checkpoint, variant: context.variant },
+      }),
+      logEvaluation({
+        name: 'intervention_timing',
+        traceId: `intervention_eval_${sessionId}_${Date.now()}`,
+        score: scores.timing / 5,
+        metadata: { userId, sessionId, checkpoint: context.checkpoint, variant: context.variant },
+      }),
+      logEvaluation({
+        name: 'intervention_tone',
+        traceId: `intervention_eval_${sessionId}_${Date.now()}`,
+        score: scores.tone / 5,
+        metadata: { userId, sessionId, checkpoint: context.checkpoint, variant: context.variant },
+      }),
+    ]);
 
     return {
       helpfulness: scores.helpfulness,
@@ -150,6 +215,21 @@ Return ONLY valid JSON (no markdown):
     };
   } catch (error) {
     console.error('Error evaluating intervention quality:', error);
+
+    // Log the failure
+    await logEvaluation({
+      name: 'intervention_quality_error',
+      traceId: `intervention_eval_${sessionId}_${Date.now()}`,
+      score: 0,
+      metadata: {
+        userId,
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        checkpoint: context.checkpoint,
+        variant: context.variant,
+      },
+    });
+
     // Return middle scores on error
     return {
       helpfulness: 3,
