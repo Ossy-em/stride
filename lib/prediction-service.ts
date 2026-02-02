@@ -14,6 +14,7 @@ interface PredictionResult {
 
 export async function predictInterventionTiming(
   userId: string,
+  sessionId: string,
   currentSession: {
     taskType: string;
     elapsedMinutes: number;
@@ -23,8 +24,8 @@ export async function predictInterventionTiming(
   try {
     const TESTING_MODE = true; // Keep true for demo
     
-    // Assign A/B test variant
-    const variant = assignVariant();
+    // Assign A/B test variant deterministically based on sessionId
+    const variant = assignVariant(sessionId);
     
   
     const checkpoints = {
@@ -116,7 +117,7 @@ export async function predictInterventionTiming(
 
   } catch (error) {
     console.error('Error predicting intervention timing:', error);
-    const variant = assignVariant();
+    const variant = assignVariant(sessionId);
     const defaultInterventionMinute = applyTimingOffset(45, variant.timingOffset);
     
     return {
@@ -137,7 +138,7 @@ export async function checkInterventionNeeded(
   elapsedMinutes: number,
   plannedDuration: number
 ): Promise<{ needed: boolean; prediction?: PredictionResult }> {
-  const prediction = await predictInterventionTiming(userId, {
+  const prediction = await predictInterventionTiming(userId, sessionId, {
     taskType,
     elapsedMinutes,
     plannedDuration,
