@@ -1,60 +1,199 @@
-export type TaskType = 'coding' | 'writing' | 'reading';
+// ============================================
+// USER
+// ============================================
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  created_at: string;
+}
 
-export type CheckInResponse = 'focused' | 'neutral' | 'distracted';
-
-export type InterventionStrategy = 'take_break' | 'switch_task' | 'push_through' | 'check_in';
-
+// ============================================
+// SESSION
+// ============================================
 export interface Session {
   id: string;
   user_id: string;
   task_description: string;
-  task_type: TaskType;
-  planned_duration: number; 
+    task_type: string;
+  planned_duration: number;
   actual_duration?: number;
   focus_quality?: number;
-  distraction_count: number;
+  distraction_count?: number;
   outcome?: string;
   started_at: string;
   ended_at?: string;
 }
 
+// ============================================
+// CHECK-IN
+// ============================================
+export type CheckInResponse = 'focused' | 'neutral' | 'distracted';
+
 export interface CheckIn {
   id: string;
   session_id: string;
-  timestamp: string;
   response: CheckInResponse;
   note?: string;
+  created_at: string;
+  minute_mark?: number; // When in the session this happened
 }
+
+// ============================================
+// INTERVENTION
+// ============================================
+export type InterventionStrategy = 'take_break' | 'switch_task' | 'push_through' | 'check_in';
 
 export interface Intervention {
   id: string;
   session_id: string;
-  triggered_at: string;
   message: string;
   strategy: InterventionStrategy;
-  user_action?: 'accepted' | 'dismissed' | 'ignored';
-  effective?: boolean;
+  checkpoint: string;
+  accepted: boolean;
+  created_at: string;
+  minute_mark?: number;
 }
 
-export interface Pattern {
-  id: string;
-  user_id: string;
-  pattern_type: 'time_of_day' | 'task_type' | 'session_length';
-  insight: string;
-  confidence: number; 
-  detected_at: string;
+// ============================================
+// DASHBOARD API RESPONSE (NEW)
+// ============================================
+export interface DashboardResponse {
+  // User info
+  user: {
+    firstName: string | null;
+  };
+
+  // Greeting & context
+  greeting: {
+    timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
+    message: string;
+    subMessage: string | null;
+  };
+
+  // Today's stats
+  today: {
+    score: number | null; // null = no sessions yet
+    sessions: number;
+    focusMinutes: number;
+  };
+
+  // Yesterday (for comparison)
+  yesterday: {
+    score: number | null;
+    sessions: number;
+    focusMinutes: number;
+  };
+
+  // Streak
+  streak: {
+    current: number;
+    longest: number;
+    isAtRisk: boolean; // Has streak but no session today
+  };
+
+  // This week
+  week: {
+    sessions: number;
+    avgScore: number;
+    trend: number; // % change from last week
+    focusMinutes: number;
+  };
+
+  // Patterns (teaser for Focus Fingerprint)
+  patterns: {
+    peakHours: {
+      start: number;
+      end: number;
+      improvement: number; // % better than average
+    } | null;
+    bestDay: {
+      day: string;
+      avgScore: number;
+    } | null;
+    avgSessionMinutes: number;
+    suggestedDuration: number;
+  };
+
+  // Personal records
+  records: {
+    longestSession: number;
+    highestFocusScore: number;
+    totalSessions: number;
+    totalFocusMinutes: number;
+  };
+
+  // AI insights
+  insights: string[];
+
+  // New user flag
+  isNewUser: boolean;
 }
 
+// ============================================
+// FOCUS FINGERPRINT (Patterns Page)
+// ============================================
+export interface FocusFingerprintData {
+  // Peak performance
+  peakHours: {
+    start: number;
+    end: number;
+    improvement: number;
+    sessionCount: number;
+  } | null;
+
+  // Drift patterns
+  driftPattern: {
+    typicalMinute: number; // When they usually drift
+    interventionSuccess: number; // % of times intervention helped
+  } | null;
+
+  // Discoveries
+  discoveries: {
+    type: 'positive' | 'negative' | 'neutral';
+    insight: string;
+  }[];
+
+  // Growth over time
+  growth: {
+    firstWeekAvg: number;
+    recentAvg: number;
+    firstWeekDrifts: number;
+    recentDrifts: number;
+    improvement: number; // %
+  } | null;
+
+  // Day breakdown
+  dayBreakdown: {
+    day: string;
+    avgScore: number;
+    sessionCount: number;
+  }[];
+
+  // Hour breakdown
+  hourBreakdown: {
+    hour: number;
+    avgScore: number;
+    sessionCount: number;
+  }[];
+}
+
+// ============================================
+// HEATMAP (Legacy - keep for compatibility)
+// ============================================
+export interface HeatmapCell {
+  day: string;
+  time_block: string;
+  avg_focus_quality: number;
+  session_count: number;
+}
+
+// ============================================
+// LEGACY DASHBOARD STATS (for backward compat)
+// ============================================
 export interface DashboardStats {
   today_focus_score: number;
-  weekly_trend: number; 
+  weekly_trend: number;
   heatmap_data: HeatmapCell[];
   insights: string[];
-}
-
-export interface HeatmapCell {
-  day: string; 
-  time_block: string; 
-  avg_focus_quality: number; 
-  session_count: number;
 }
