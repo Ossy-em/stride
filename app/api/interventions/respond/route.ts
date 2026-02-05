@@ -8,7 +8,9 @@ import { getCurrentUser } from '@/lib/auth';
 const respondSchema = z.object({
   interventionId: z.string().uuid(),
   action: z.enum(['accepted', 'dismissed', 'ignored']),
-  // Optional: client can send how long the notification was visible
+  focusState: z.enum(['focused', 'drifting', 'lost']).optional(),
+  driftReason: z.enum(['mind_wandering', 'feeling_stuck', 'tired', 'external']).optional(),
+  breakEffectiveness: z.enum(['helped', 'somewhat', 'not_really']).optional(),
   responseTimeMs: z.number().optional(),
 });
 
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { interventionId, action, responseTimeMs } = respondSchema.parse(body);
+    const { interventionId, action, focusState, driftReason, breakEffectiveness, responseTimeMs } = respondSchema.parse(body);
 
     // Fetch intervention with session data
     const { data: intervention, error: fetchError } = await supabase
@@ -68,6 +70,8 @@ export async function POST(request: NextRequest) {
       .update({
         user_action: action,
         effective: effective,
+        focus_state: focusState || null,
+        drift_reason: driftReason || null,
       })
       .eq('id', interventionId);
 
@@ -78,8 +82,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`📝 Intervention ${interventionId}: ${action} (${calculatedResponseTimeMs}ms response time)`);
 
+    // ============================================
     // LOG TO OPIK FOR A/B ANALYSIS
-   
+    // ============================================
     await logInterventionOutcome({
       interventionTraceId: `intervention_${interventionId}`,
       sessionId: intervention.session_id,
@@ -95,6 +100,9 @@ export async function POST(request: NextRequest) {
         timing_offset: intervention.timing_offset,
         elapsed_minutes: elapsedMinutes,
         task_type: intervention.sessions.task_type,
+        focus_state: focusState,
+        drift_reason: driftReason,
+        break_effectiveness: breakEffectiveness,
       },
     });
 
