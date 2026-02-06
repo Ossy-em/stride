@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**Stride**
 
-## Getting Started
+Stride learns your focus patterns and intervenes before you drift.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**The Problem**
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The average person loses 2 hours a day to unplanned distraction. That's 30 days a year. Gone.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Not because you're lazy. Because nothing warned you it was happening.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Focus apps today are reactive. They show you a report after the day is over. But that doesn't help. You already know you got distracted. You need something that warns you before it happens.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+**The Solution**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Stride is a focus companion that builds your focus fingerprint.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+During each session, Stride checks in at key moments. You tell it how you're feeling: focused, drifting, or lost. If you're struggling, you tap why: mind wandering, feeling stuck, tired, or distracted.
 
-## Deploy on Vercel
+Over time, Stride learns your patterns. When you drift. Why you drift. What helps you recover.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Then it uses your focus fingerprint to intervene at the right moment. Before you lose focus. Not after.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+**How It Works**
+
+1. Start a focus session with a task and duration
+2. Stride checks in at 20%, 50%, and 80% of your session
+3. You give quick feedback on your focus state
+4. Stride builds your focus fingerprint across sessions
+5. Interventions become personalized to you
+
+---
+
+**Tech Stack**
+
+- Next.js 14 (App Router)
+- TypeScript
+- Supabase (database and auth)
+- Claude API (Haiku)
+- Opik SDK for observability
+
+---
+
+**Opik Integration**
+
+Stride uses Opik to track every AI interaction and measure what works.
+
+What we log:
+- Intervention generation (prompt, response, latency, tokens)
+- Intervention outcomes (user action, focus state, drift reason)
+- LLM-as-judge evaluations (helpfulness, timing, tone)
+- Session summaries (acceptance rate, effectiveness rate)
+- Pattern analysis with confidence scores
+
+What we measure:
+- A/B test performance across 9 message and timing combinations
+- Intervention effectiveness by checkpoint
+- Break effectiveness
+- Focus state patterns by task type
+
+
+---
+
+**Screenshots**
+
+[App session screen]
+
+[Intervention with feedback flow]
+
+[A/B testing dashboard]
+
+[Opik traces]
+
+---
+
+**Live Demo**
+
+[Your deployed URL]
+
+---
