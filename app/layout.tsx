@@ -8,8 +8,8 @@ const syne = Syne({ subsets: ['latin'], variable: '--font-syne' });
 
 
 export const metadata: Metadata = {
-  title: 'Stride - AI Focus Companion',
-  description: 'Stay focused with AI-powered insights and interventions',
+title: 'Stride',
+description: 'Predicts distraction. Protects your focus.'
 }
 
 export default function RootLayout({
