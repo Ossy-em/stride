@@ -9,11 +9,12 @@ import { applyVariantStyle, type MessageVariant } from './ab-testing';
 import { logAIError } from './opik';
 import type { Session } from '@/types';
 
+
 // RESPONSE SCHEMAS (Zod validation)
 
 const interventionResponseSchema = z.object({
   message: z.string().min(1).max(200),
-  strategy: z.enum(['push_through', 'check_in', 'take_break']),
+  intent: z.enum(['awareness', 'refocus', 'momentum', 'closure']),
   reasoning: z.string(),
 });
 
@@ -30,8 +31,9 @@ const patternAnalysisSchema = z.object({
 
 const insightsSchema = z.array(z.string().min(1).max(300));
 
+// ============================================
 // PATTERN ANALYSIS
-
+// ============================================
 export async function analyzeUserPatterns(
   sessions: Session[],
   userId: string
@@ -53,14 +55,12 @@ export async function analyzeUserPatterns(
       }
     );
     
-    // Validate response shape
     const parsed = patternAnalysisSchema.parse(JSON.parse(response));
     return parsed;
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
-    // Log error to Opik
     await logAIError({
       name: 'pattern_analysis',
       input: { sessionCount: sessions.length, userId },
@@ -82,8 +82,9 @@ export async function analyzeUserPatterns(
   }
 }
 
+// ============================================
 // INTERVENTION GENERATION
-
+// ============================================
 export async function generateIntervention(
   context: {
     taskDescription: string;
@@ -91,8 +92,21 @@ export async function generateIntervention(
     elapsedMinutes: number;
     plannedDuration: number;
     checkpoint: 'early' | 'mid' | 'late';
-    userPatterns: string[];
-    recentCheckIns: string[];
+    focusHistory: {
+      currentSession: Array<{
+        checkpoint: string;
+        focusState: string | null;
+        driftReason: string | null;
+        action: string | null;
+      }>;
+      pastSessions: {
+        totalInterventions: number;
+        commonDriftReasons: Array<{ reason: string; count: number }>;
+        focusStateAtCheckpoints: Array<{ checkpoint: string; avgState: string }>;
+        breakEffectiveness: { helped: number; somewhat: number; notReally: number };
+      };
+      patterns: string[];
+    };
     variant?: MessageVariant;
   },
   userId: string,
@@ -101,24 +115,21 @@ export async function generateIntervention(
   message: string;
   strategy: 'push_through' | 'check_in' | 'take_break';
   reasoning: string;
-  traceId?: string;
+  intent?: string;
   isFallback: boolean;
 }> {
   const startTime = Date.now();
   
   try {
-    // Build base prompt with checkpoint context
     let prompt = buildInterventionPrompt({
       taskDescription: context.taskDescription,
       taskType: context.taskType,
       elapsedMinutes: context.elapsedMinutes,
       plannedDuration: context.plannedDuration,
       checkpoint: context.checkpoint,
-      userPatterns: context.userPatterns,
-      recentCheckIns: context.recentCheckIns,
+      focusHistory: context.focusHistory,
     });
     
-    // Apply A/B test variant style if provided
     if (context.variant) {
       prompt = applyVariantStyle(prompt, context.variant);
     }
@@ -135,24 +146,22 @@ export async function generateIntervention(
         elapsedMinutes: context.elapsedMinutes,
         checkpoint: context.checkpoint,
         variant: context.variant,
+        hasFocusHistory: context.focusHistory.pastSessions.totalInterventions > 0,
         tags: ['intervention', context.taskType, context.checkpoint],
       }
     );
     
-    // Parse and validate response
     const rawParsed = JSON.parse(response);
     const parsed = interventionResponseSchema.parse(rawParsed);
     
-    // Validate strategy matches checkpoint (log mismatch but don't fail)
-    const expectedStrategy = getExpectedStrategy(context.checkpoint);
-    if (parsed.strategy !== expectedStrategy) {
-      console.warn(`⚠️ Strategy mismatch: AI chose "${parsed.strategy}" but checkpoint "${context.checkpoint}" expects "${expectedStrategy}"`);
-      // Override to expected strategy for consistency
-      parsed.strategy = expectedStrategy;
-    }
+    // Strategy is determined by checkpoint, not LLM
+    const strategy = getExpectedStrategy(context.checkpoint);
     
     return {
-      ...parsed,
+      message: parsed.message,
+      strategy,
+      reasoning: parsed.reasoning,
+      intent: parsed.intent,
       isFallback: false,
     };
     
@@ -161,10 +170,8 @@ export async function generateIntervention(
     
     console.error('Error generating intervention:', error);
     
-    // Build fallback response
     const fallback = buildFallbackIntervention(context);
     
-    // Log error to Opik (valuable for debugging)
     await logAIError({
       name: 'intervention_generation',
       input: {
@@ -192,8 +199,9 @@ export async function generateIntervention(
   }
 }
 
+// ============================================
 // DASHBOARD INSIGHTS
-
+// ============================================
 export async function generateDashboardInsights(
   sessions: Session[],
   userId: string
@@ -215,13 +223,11 @@ export async function generateDashboardInsights(
       }
     );
     
-    // Parse response - handle potential formatting issues
     let parsed: string[];
     
     try {
       parsed = JSON.parse(response);
     } catch {
-      // If JSON parsing fails, try to extract array from response
       const match = response.match(/\[[\s\S]*\]/);
       if (match) {
         parsed = JSON.parse(match[0]);
@@ -230,17 +236,14 @@ export async function generateDashboardInsights(
       }
     }
     
-    // Validate with Zod
     const validated = insightsSchema.parse(parsed);
     return validated;
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
-    // Build fallback insights
     const fallbackInsights = buildFallbackInsights(sessions);
     
-    // Log error to Opik
     await logAIError({
       name: 'dashboard_insights',
       input: { sessionCount: sessions.length, userId },
@@ -259,8 +262,9 @@ export async function generateDashboardInsights(
   }
 }
 
+// ============================================
 // HELPER FUNCTIONS
-
+// ============================================
 
 function getExpectedStrategy(checkpoint: 'early' | 'mid' | 'late'): 'push_through' | 'check_in' | 'take_break' {
   switch (checkpoint) {
@@ -283,8 +287,6 @@ function buildFallbackIntervention(context: {
   const percentComplete = Math.round((context.elapsedMinutes / context.plannedDuration) * 100);
   const minutesLeft = context.plannedDuration - context.elapsedMinutes;
   
-  // Fallbacks organized by checkpoint and variant
-  // These maintain the companion voice even when AI fails
   const fallbacks = {
     early: {
       direct: `${context.elapsedMinutes} mins in. How's it going?`,
@@ -293,17 +295,16 @@ function buildFallbackIntervention(context: {
     },
     mid: {
       direct: `Halfway there. Still with it?`,
-      question: `${percentComplete}% in — this is usually the hard part. How's focus?`,
+      question: `${percentComplete}% in. How's focus?`,
       challenge: `${context.elapsedMinutes} mins down. This is where it counts.`,
     },
     late: {
       direct: `${minutesLeft} mins left. Roll your shoulders?`,
-      question: `Almost there. Hands feeling tight?`,
-      challenge: `Home stretch. Take 3 deep breaths before the final push?`,
+      question: `Almost there. Feeling good?`,
+      challenge: `Home stretch. Deep breath?`,
     },
   };
   
-  // Select appropriate fallback
   const variant = context.variant || 'direct';
   const message = fallbacks[context.checkpoint][variant];
   const strategy = getExpectedStrategy(context.checkpoint);
@@ -324,12 +325,11 @@ function buildFallbackInsights(sessions: Session[]): string[] {
     ];
   }
   
-  // Calculate basic stats for simple fallback insights
   const totalMinutes = sessions.reduce((sum, s) => sum + (s.actual_duration || 0), 0);
   const avgFocus = sessions.reduce((sum, s) => sum + (s.focus_quality || 0), 0) / sessionCount;
   
   return [
-    `${sessionCount} sessions completed — ${totalMinutes} minutes of focused work.`,
-    `Your average focus score is ${avgFocus.toFixed(1)}/10. We're learning your patterns.`,
+    `${sessionCount} sessions completed. ${totalMinutes} minutes of focused work.`,
+    `Average focus: ${avgFocus.toFixed(1)}/10. We're learning your patterns.`,
   ];
 }
