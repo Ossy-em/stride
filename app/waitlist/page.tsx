@@ -90,7 +90,7 @@ export default function WaitlistPage() {
                   You're on the list!
                 </h1>
                 <p className="text-white/60 mb-8">
-                  We'll let you know as soon as Stride is ready. In the meantime, follow us for updates and focus tips.
+                  We'll email you when Stride is ready.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link
@@ -100,12 +100,12 @@ export default function WaitlistPage() {
                     Back to Home
                   </Link>
                   <a
-                    href="https://twitter.com/stridehq"
+                    href="https://x.com/ossydev"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-6 py-3 text-sm font-medium text-white border border-white/20 rounded-full hover:bg-white/5 transition-colors"
                   >
-                    Follow @stridehq
+                    Follow for updates
                   </a>
                 </div>
               </div>
@@ -125,7 +125,7 @@ export default function WaitlistPage() {
                   Join the Waitlist
                 </h1>
                 <p className="text-white/60 text-center mb-8">
-                  Be the first to experience focus that actually works. We predict when you'll lose focus and intervene before it happens.
+                  Stride learns your focus patterns and nudges you before you drift. Be the first to try it.
                 </p>
 
                 {/* Form */}
@@ -161,11 +161,6 @@ export default function WaitlistPage() {
                   )}
                 </form>
 
-                {/* Social Proof */}
-                <p className="text-white/40 text-sm text-center mt-6">
-                  Join 2,000+ others waiting for launch
-                </p>
-
                 {/* Features Preview */}
                 <div className="mt-12 pt-8 border-t border-white/10">
                   <p className="text-xs uppercase tracking-widest text-white/40 text-center mb-6">
@@ -174,15 +169,15 @@ export default function WaitlistPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5">
                       <Brain className="w-6 h-6 text-lime-400 mb-2" />
-                      <span className="text-sm text-white/80">AI Focus Prediction</span>
+                      <span className="text-sm text-white/80">Focus Fingerprint</span>
                     </div>
                     <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5">
                       <Bell className="w-6 h-6 text-lime-400 mb-2" />
-                      <span className="text-sm text-white/80">Smart Interventions</span>
+                      <span className="text-sm text-white/80">Smart Nudges</span>
                     </div>
                     <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5">
                       <TrendingUp className="w-6 h-6 text-lime-400 mb-2" />
-                      <span className="text-sm text-white/80">Focus Analytics</span>
+                      <span className="text-sm text-white/80">Pattern Insights</span>
                     </div>
                   </div>
                 </div>
