@@ -2,28 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import {
-  Brain,
   Zap,
-  BarChart3,
-  Shield,
   ArrowRight,
   Menu,
   X,
   ChevronRight,
-  Sparkles,
-  Target,
-  Bell,
-  Activity,
   CheckCircle2,
-  Play,
-  TrendingUp,
-  Clock,
   MessageSquare,
-  Mail,
-  Phone,
-  MapPin,
 } from 'lucide-react';
 
 // Animation variants
@@ -38,11 +25,6 @@ const staggerContainer = {
     opacity: 1,
     transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
 
 // Navbar Component
@@ -60,7 +42,6 @@ function Navbar() {
     { name: 'Features', href: '#features' },
     { name: 'How It Works', href: '#how-it-works' },
     { name: 'Testimonials', href: '#testimonials' },
-    { name: 'Pricing', href: '#pricing' },
     { name: 'FAQ', href: '#faq' },
   ];
 
@@ -96,10 +77,10 @@ function Navbar() {
           {/* CTA Button */}
           <div className="hidden md:block">
             <a
-              href="/signup"
+              href="/waitlist"
               className="px-4 py-2 text-sm font-medium text-[#1a3a2f] bg-lime-400 rounded-full hover:bg-lime-300 transition-colors"
             >
-              Get Started
+              Join Waitlist
             </a>
           </div>
 
@@ -126,10 +107,10 @@ function Navbar() {
               </a>
             ))}
             <a
-              href="/signup"
+              href="/waitlist"
               className="block mt-4 w-full py-2.5 text-center text-[#1a3a2f] font-medium bg-lime-400 rounded-full"
             >
-              Get Started
+              Join Waitlist
             </a>
           </div>
         )}
@@ -177,17 +158,10 @@ function HeroSection() {
                 height={28}
                 className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
               />
-              <Image
-                src="/assets/avatars/avatar-4.png"
-                alt="User"
-                width={28}
-                height={28}
-                className="w-7 h-7 rounded-full border-2 border-[#143527] object-cover"
-              />
             </div>
-            <span className="text-sm text-white/80">2k+ users staying focused</span>
+            <span className="text-sm text-white/80">Join others staying focused</span>
             <a href="#testimonials" className="text-sm text-lime-400 hover:text-lime-300 flex items-center gap-1">
-              Join them <ArrowRight className="w-3 h-3" />
+              See how <ArrowRight className="w-3 h-3" />
             </a>
           </div>
         </motion.div>
@@ -195,23 +169,22 @@ function HeroSection() {
         {/* Main Content */}
         <div className="text-center max-w-4xl mx-auto">
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6"
-          >
-            Your Focus Just
-            <br />
-            <span className="text-lime-400">Activated Autopilot</span>
-          </motion.h1>
-
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.3 }}
+  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6"
+>
+  Focus Loss Isn't Random.
+  <br />
+  <span className="text-lime-400">Stride Learns When It Happens.</span>
+</motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="text-lg text-white/60 max-w-2xl mx-auto mb-8"
           >
-            Spend less time fighting distractions, more time in deep work. We predict when you will lose focus and intervene with AI-powered precision.
+            Stride learns your focus patterns and nudges you right before you drift.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -222,34 +195,33 @@ function HeroSection() {
             className="flex flex-col sm:flex-row gap-3 justify-center"
           >
             <a
-              href="/signup"
+              href="/waitlist"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-[#1a3a2f] bg-lime-400 rounded-full hover:bg-lime-300 transition-colors"
             >
-              Start Free Trial
+              Join Waitlist
             </a>
             <a
               href="#how-it-works"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white border border-white/20 rounded-full hover:bg-white/5 transition-colors"
             >
-              Learn more
+              See how it works
             </a>
           </motion.div>
         </div>
 
-        {/* Hero Visual - Phone Mockups with Floating UI */}
+        {/* Hero Visual */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.8 }}
           className="relative mt-16"
         >
-          <div className="relative max-w-5xl mx-auto">
-            {/* Floating UI Cards - Left Side */}
-           <div className="absolute left-0 top-1/4 -translate-x-1/4 z-20 hidden lg:block">
-            
+          <div className="flex justify-center items-center gap-6 lg:gap-12">
+            {/* Floating UI Card - Left */}
+            <div className="hidden lg:block">
               <div className="w-48 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform -rotate-6">
                 <p className="text-xs text-white/50 mb-1">Focus Sessions</p>
-                <p className="text-xl font-bold text-lime-400">+2,531</p>
+                <p className="text-xl font-bold text-lime-400">+127</p>
                 <div className="mt-3 h-16 bg-gradient-to-t from-lime-400/20 to-transparent rounded-lg flex items-end justify-around px-2">
                   {[40, 60, 45, 80, 65, 90, 75].map((h, i) => (
                     <div key={i} className="w-3 bg-lime-400/60 rounded-t" style={{ height: `${h}%` }} />
@@ -258,11 +230,10 @@ function HeroSection() {
               </div>
             </div>
 
-            {/* Floating UI Cards - Right Side */}
-            <div className="absolute right-0 top-1/3 translate-x-1/4 z-20 hidden lg:block">
-            
+            {/* Floating UI Card - Right */}
+            <div className="hidden lg:block">
               <div className="w-44 p-4 bg-[#1a3a2f] rounded-2xl border border-white/10 shadow-2xl transform rotate-6">
-                <p className="text-xs text-white/50 mb-2">Deep Work Score</p>
+                <p className="text-xs text-white/50 mb-2">Focus Score</p>
                 <div className="flex items-center gap-3">
                   <div className="relative w-12 h-12">
                     <svg className="w-12 h-12 -rotate-90">
@@ -285,75 +256,8 @@ function HeroSection() {
                 </div>
               </div>
             </div>
-
-            {/* Central Phone Mockups */}
-            <div className="flex justify-center items-end gap-2">
-              {/* Left Phone */}
-              <div className="w-40 sm:w-52 transform -rotate-6 translate-y-8 opacity-80">
-                <Image
-                  src="/assets/hero-phone-left.png"
-                  alt="Focus lifestyle content"
-                  width={250}
-                  height={530}
-                  className="w-full rounded-3xl"
-                />
-              </div>
-
-              {/* Center Phone */}
-         <div className="w-3xl sm:w-96 z-10 overflow-visible bg-amber-50">
-  <Image
-    src="/assets/test/hero-phone4.png"
-    alt="Stride App"
-    width={900}
-    height={800}
-    className="w-full scale-125 sm:scale-110"
-    priority
-  />
-</div>
-
-              {/* Right Phone */}
-              <div className="w-40 sm:w-52 transform rotate-6 translate-y-8 opacity-80">
-                <Image
-                  src="/assets/hero-phone-right.png"
-                  alt="Productivity lifestyle content"
-                  width={250}
-                  height={530}
-                  className="w-full rounded-3xl"
-                />
-              </div>
-            </div>
           </div>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// Logo Bar Section
-function LogoBar() {
-  const companies = [
-    { name: 'Flowstate', logo: '/assets/logos/flowstate.svg' },
-    { name: 'DeepMind Labs', logo: '/assets/logos/deepmind-labs.svg' },
-    { name: 'Zenith', logo: '/assets/logos/zenith.svg' },
-    { name: 'Focusly', logo: '/assets/logos/focusly.svg' },
-    { name: 'Chronos', logo: '/assets/logos/chronos.svg' },
-  ];
-
-  return (
-    <section className="py-12 bg-white border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60">
-          {companies.map((company) => (
-            <Image
-              key={company.name}
-              src={company.logo}
-              alt={company.name}
-              width={120}
-              height={40}
-              className="h-8 w-auto grayscale"
-            />
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -376,18 +280,18 @@ function BentoFeatures() {
         >
           <motion.div variants={fadeInUp}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Your Focus Just
+              Focus That Learns
               <br />
-              <span className="text-[#1a3a2f]">Activated Autopilot</span>
+              <span className="text-[#1a3a2f]">How You Work</span>
             </h2>
           </motion.div>
           <motion.div variants={fadeInUp} className="flex flex-col justify-center">
             <p className="text-gray-600 mb-4">
-              Spend less time fighting distractions, more time improving your deep work capacity.
+              Stride builds your focus fingerprint and uses it to help you stay on track.
             </p>
             <div className="flex gap-3">
               <a
-                href="/signup"
+                href="/waitlist"
                 className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-[#1a3a2f] rounded-full hover:bg-[#0f2a1f] transition-colors"
               >
                 Join waitlist
@@ -414,9 +318,9 @@ function BentoFeatures() {
             variants={fadeInUp}
             className="p-6 bg-gray-50 rounded-3xl border border-gray-100"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics that matter</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Your Focus Fingerprint</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Track your focus sessions and optimize them with AI-powered insights.
+              See when you drift, why you drift, and what helps you recover.
             </p>
             <div className="h-40 bg-white rounded-2xl border border-gray-100 flex items-end justify-around p-4">
               {[45, 65, 50, 85, 70, 90, 60].map((h, i) => (
@@ -425,30 +329,25 @@ function BentoFeatures() {
                     className={`w-6 rounded-t transition-all ${i === 5 ? 'bg-lime-500' : 'bg-lime-400/60'}`}
                     style={{ height: `${h}%` }}
                   />
-                  {i === 5 && (
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-lime-500 rounded text-[10px] text-white font-medium whitespace-nowrap">
-                      87% accuracy
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           </motion.div>
 
-          {/* Card 2: Integrations */}
+          {/* Card 2: Integrations Coming Soon */}
           <motion.div
             variants={fadeInUp}
             className="p-6 bg-gray-50 rounded-3xl border border-gray-100"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Seamless Integrations</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Integrations Coming Soon</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Connects with all your productivity tools.
+              We're building connections to your favorite tools. Join the waitlist to vote on what we build first.
             </p>
             <div className="grid grid-cols-3 gap-3">
-              {['N', 'S', 'C', 'Sp', 'T', 'L'].map((icon, i) => (
+              {['?', '?', '?', '?', '?', '?'].map((icon, i) => (
                 <div
                   key={i}
-                  className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-sm font-medium text-gray-400"
+                  className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-sm font-medium text-gray-300"
                 >
                   {icon}
                 </div>
@@ -461,9 +360,9 @@ function BentoFeatures() {
             variants={fadeInUp}
             className="p-6 bg-gray-50 rounded-3xl border border-gray-100"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Precise Predictions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Predictive Nudges</h3>
             <p className="text-sm text-gray-600 mb-4">
-              AI predicts when you will lose focus before it happens.
+              Stride learns your patterns and steps in before you lose focus.
             </p>
             <div className="h-32 bg-white rounded-2xl border border-gray-100 p-4 relative overflow-hidden">
               <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
@@ -494,7 +393,7 @@ function BentoFeatures() {
             </div>
           </motion.div>
 
-          {/* Card 4: Media/Content - Large */}
+          {/* Card 4: Smart Interventions - Large */}
           <motion.div
             variants={fadeInUp}
             className="md:col-span-2 p-6 bg-gray-50 rounded-3xl border border-gray-100"
@@ -517,9 +416,9 @@ function BentoFeatures() {
             variants={fadeInUp}
             className="p-6 bg-gray-50 rounded-3xl border border-gray-100"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">One tool fits all</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">One Tool, No Clutter</h3>
             <p className="text-sm text-gray-600 mb-4">
-              No more endless add-ons, plugins and extensions.
+              No plugins. No extensions. Just focus.
             </p>
             <div className="h-36 bg-white rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden">
               <Image
@@ -527,7 +426,7 @@ function BentoFeatures() {
                 alt="Growth illustration"
                 width={200}
                 height={160}
-                className="w-auto h-32 object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
           </motion.div>
@@ -544,19 +443,19 @@ function FeatureSections() {
 
   const features = [
     {
-      badge: 'Predictive AI',
-      title: 'Know When Focus Breaks Before It Happens',
+      badge: 'Focus Fingerprint',
+      title: 'Your Patterns. Your Insights.',
       description:
-        'Our AI learns your unique patterns and predicts distraction moments with 87% accuracy. Get timely interventions, not annoying interruptions.',
-      benefits: ['Pattern Learning', 'Smart Timing', 'Zero Disruption'],
+        'Stride checks in during your sessions. You tell it how you feel. Over time, it builds a picture of when you drift, why you drift, and what brings you back.',
+      benefits: ['Pattern Learning', 'Smart Timing', 'Personal Insights'],
       imagePosition: 'right',
-      image: '/assets/features/feature-ai-prediction.png',
+      image: '/assets/features/ai-prediction.png',
     },
     {
       badge: 'Smart Interventions',
-      title: 'Personalized Nudges That Actually Work',
+      title: 'Nudges That Actually Help',
       description:
-        'From 2-minute breathing exercises to movement prompts and mindful micro-breaks. Each intervention is tailored to what works best for you.',
+        'Not random reminders. Stride uses your focus fingerprint to step in at the right moment with the right message.',
       benefits: ['Breathing Exercises', 'Movement Prompts', 'Micro-breaks'],
       imagePosition: 'left',
       image: '/assets/features/feature-stretch.jpg',
@@ -572,7 +471,7 @@ function FeatureSections() {
           variants={staggerContainer}
           className="space-y-24"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.div
               key={feature.title}
               variants={fadeInUp}
@@ -623,27 +522,24 @@ function TestimonialsSection() {
   const testimonials = [
     {
       name: 'Sarah Chen',
-      role: 'Software Engineer at Stripe',
+      role: 'Software Engineer',
       quote:
         'Stride knows when I need a break before I do. My deep work sessions have doubled since I started using it.',
-      category: 'Engineering Excellence',
-      image: '/assets/testimonials/sarah-chen.jpg',
+      category: 'Engineering',
     },
     {
       name: 'Marcus Johnson',
       role: 'Content Creator',
       quote:
-        "As a writer, focus is everything. Stride's gentle interventions help me stay in the zone for hours.",
-      category: 'Creative Flow',
-      image: '/assets/testimonials/marcus-johnson.jpg',
+        "As a writer, focus is everything. Stride's gentle nudges help me stay in the zone for hours.",
+      category: 'Creative Work',
     },
     {
       name: 'Elena Rodriguez',
-      role: 'Product Manager at Notion',
+      role: 'Product Manager',
       quote:
-        'The analytics helped me understand my focus patterns. I now structure my entire day around my natural energy cycles.',
-      category: 'Data-Driven Productivity',
-      image: '/assets/testimonials/elena-rodriguez.jpg',
+        'The patterns helped me understand my focus. I now structure my entire day around my natural energy cycles.',
+      category: 'Productivity',
     },
   ];
 
@@ -658,10 +554,10 @@ function TestimonialsSection() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Trusted by Focused Minds
+            What Early Users Say
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            See how professionals across industries are transforming their productivity with Stride.
+            Real feedback from people testing Stride.
           </p>
         </motion.div>
 
@@ -678,25 +574,11 @@ function TestimonialsSection() {
               variants={fadeInUp}
               className="bg-white rounded-3xl overflow-hidden border border-gray-100"
             >
-              {/* Image */}
-              <div className="aspect-[3/4] relative">
-                <Image
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  fill
-                  className="object-cover"
-                />
-                {/* Name Badge */}
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-[#1a3a2f] rounded-xl px-4 py-3">
-                    <p className="text-white font-medium text-sm">{testimonial.name}</p>
-                    <p className="text-white/60 text-xs">{testimonial.role}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
               <div className="p-6">
+                <div className="bg-[#1a3a2f] rounded-xl px-4 py-3 mb-4">
+                  <p className="text-white font-medium text-sm">{testimonial.name}</p>
+                  <p className="text-white/60 text-xs">{testimonial.role}</p>
+                </div>
                 <p className="text-sm font-medium text-lime-600 mb-2">{testimonial.category}</p>
                 <p className="text-gray-700 text-sm leading-relaxed">"{testimonial.quote}"</p>
               </div>
@@ -712,7 +594,7 @@ function TestimonialsSection() {
           className="text-center mt-12"
         >
           <a
-            href="/signup"
+            href="/waitlist"
             className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-[#1a3a2f] rounded-full hover:bg-[#0f2a1f] transition-colors"
           >
             Join Waitlist
@@ -731,29 +613,29 @@ function FAQSection() {
 
   const faqs = [
     {
-      question: 'How does Stride predict when I will lose focus?',
+      question: 'How does Stride know when I will lose focus?',
       answer:
-        'Stride uses machine learning models trained on productivity research combined with your personal session data. It identifies patterns in timing, breaks, and work rhythms to predict distraction moments before they occur.',
+        'Stride checks in during your sessions and asks how you feel. Over time, it spots patterns like when you usually drift, what causes it, and what helps. Then it uses that to nudge you before it happens.',
     },
     {
-      question: 'What kind of interventions does Stride provide?',
+      question: 'What kind of nudges does Stride send?',
       answer:
-        'Interventions range from 2-minute guided breathing exercises to movement prompts, hydration reminders, and strategic micro-breaks. You can customize which types work best for you.',
+        'Short, calm messages. Sometimes a quick breathing exercise. Sometimes a stretch. Sometimes just a check-in. You can customize what works for you.',
     },
     {
-      question: 'Is my data private and secure?',
+      question: 'Is my data private?',
       answer:
-        'Absolutely. All focus data is processed locally on your device by default. Cloud sync is optional and uses end-to-end encryption.',
+        'Yes. Your focus data stays yours. We do not sell it or share it with anyone.',
     },
     {
-      question: 'Can I customize the intervention timing?',
+      question: 'Can I customize when Stride checks in?',
       answer:
-        'Yes! You can set preferences for intervention frequency, types, and even block certain hours for uninterrupted deep work.',
+        'Yes. You can set how often you want nudges, what types you prefer, and block certain hours for uninterrupted work.',
     },
     {
-      question: 'Does Stride work with my existing tools?',
+      question: 'When will Stride launch?',
       answer:
-        'Stride integrates with Notion, Todoist, Calendar apps, Slack, and more. Check our integrations page for the full list.',
+        'Soon. Join the waitlist and we will email you when it is ready.',
     },
   ];
 
@@ -769,12 +651,10 @@ function FAQSection() {
           {/* Left: Header + Contact */}
           <motion.div variants={fadeInUp}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Frequently Asked
-              <br />
-              Questions
+              Questions?
             </h2>
             <p className="text-gray-600 mb-8">
-              Find answers to common questions about Stride, focus interventions, and how to optimize your deep work.
+              Here are answers to the common ones. Still curious? Reach out.
             </p>
 
             {/* Contact Card */}
@@ -782,7 +662,7 @@ function FAQSection() {
               <MessageSquare className="w-8 h-8 text-[#1a3a2f] mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Got More Questions?</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Our team is here to help with anything about focus, productivity, and getting started.
+                We are happy to help.
               </p>
               <a
                 href="/contact"
@@ -845,44 +725,14 @@ function CTASection() {
           <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
             {/* Content */}
             <div>
-              {/* Mini avatar row */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex -space-x-2">
-                  <Image
-                    src="/assets/avatars/avatar-1.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
-                  <Image
-                    src="/assets/avatars/avatar-2.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
-                  <Image
-                    src="/assets/avatars/avatar-3.png"
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-[#143527] object-cover"
-                  />
-                </div>
-                <span className="text-sm text-white/60">Join 2k+ focused professionals</span>
-              </div>
-
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                Don't Wait.
-                <br />
-                Get Results From Day One.
+                Ready to Focus Better?
               </h2>
               <p className="text-white/60 mb-6">
-                Start your free trial today and experience the power of predictive focus interventions.
+                Join the waitlist. We will email you when Stride is ready.
               </p>
               <a
-                href="/signup"
+                href="/waitlist"
                 className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-[#1a3a2f] bg-lime-400 rounded-full hover:bg-lime-300 transition-colors"
               >
                 Join the waitlist
@@ -893,12 +743,12 @@ function CTASection() {
             <div>
               <div className="bg-[#0f2a1f] rounded-2xl border border-white/10 p-6 transform rotate-2">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-white/50">Total Focus Hours</span>
-                  <span className="text-xs text-lime-400">+23% this month</span>
+                  <span className="text-sm text-white/50">Focus Hours</span>
+                  <span className="text-xs text-lime-400">This week</span>
                 </div>
-                <p className="text-3xl font-bold text-white mb-4">2,847 hrs</p>
+                <p className="text-3xl font-bold text-white mb-4">12.5 hrs</p>
                 <div className="h-24 flex items-end gap-1">
-                  {[30, 45, 35, 55, 50, 70, 65, 85, 75, 90, 80, 95].map((h, i) => (
+                  {[30, 45, 35, 55, 50, 70, 65].map((h, i) => (
                     <div
                       key={i}
                       className="flex-1 bg-lime-400/60 rounded-t"
@@ -920,108 +770,43 @@ function Footer() {
   return (
     <footer className="py-16 bg-white border-t border-gray-100">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Newsletter + Logo Row */}
-        <div className="grid md:grid-cols-2 gap-12 mb-12">
-          {/* Newsletter */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Deep Work Demands Big Focus.
-              <br />
-              Join Our Newsletter.
-            </h3>
-            <div className="flex gap-2 mt-4">
-              <input
-                type="email"
-                placeholder="name@email.com"
-                className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full focus:outline-none focus:border-lime-400"
-              />
-              <button className="px-5 py-2.5 text-sm font-medium text-[#1a3a2f] bg-lime-400 rounded-full hover:bg-lime-300 transition-colors">
-                Subscribe
-              </button>
-            </div>
-          </div>
-
+        {/* Logo + Links Row */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
           {/* Logo */}
-          <div className="flex items-center justify-start md:justify-end">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-lime-400 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#1a3a2f]" strokeWidth={2.5} />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Stride</span>
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-lime-400 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-[#1a3a2f]" strokeWidth={2.5} />
             </div>
+            <span className="text-2xl font-bold text-gray-900">Stride</span>
           </div>
-        </div>
 
-        {/* Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-8 border-t border-gray-100">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Pages</h4>
-            <ul className="space-y-2">
-              {['Home', 'Features', 'Pricing', 'Blog'].map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Resources</h4>
-            <ul className="space-y-2">
-              {['Documentation', 'Integrations', 'Updates', 'Support'].map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Contact</h4>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <Mail className="w-4 h-4" />
-                hello@stride.app
-              </li>
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <Phone className="w-4 h-4" />
-                +1 (555) 123-4567
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Location</h4>
-            <p className="text-sm text-gray-500">
-              San Francisco, CA
-              <br />
-              United States
-            </p>
+          {/* Links */}
+          <div className="flex gap-8">
+            <a href="#features" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              How It Works
+            </a>
+            <a href="#faq" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              FAQ
+            </a>
+            <a href="/contact" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              Contact
+            </a>
           </div>
         </div>
 
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-100">
-          <div className="flex items-center gap-4">
-            {['youtube', 'twitter', 'pinterest', 'instagram'].map((social) => (
-              <a
-                key={social}
-                href="#"
-                className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-white hover:bg-gray-700 transition-colors"
-              >
-                <span className="text-xs">{social[0].toUpperCase()}</span>
-              </a>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500">© 2025 Stride. All rights reserved.</p>
           <div className="flex items-center gap-6 text-sm text-gray-500">
             <a href="#" className="hover:text-gray-900 transition-colors">
               Privacy Policy
             </a>
             <a href="#" className="hover:text-gray-900 transition-colors">
-              Terms & Conditions
+              Terms
             </a>
-            <span>Made with Stride</span>
           </div>
         </div>
       </div>
@@ -1035,7 +820,6 @@ export default function StrideLandingPage() {
     <main className="bg-white text-gray-900 overflow-x-hidden">
       <Navbar />
       <HeroSection />
-      <LogoBar />
       <BentoFeatures />
       <FeatureSections />
       <TestimonialsSection />
