@@ -1,85 +1,75 @@
-**Stride**
+# Stride
 
-Stride learns your focus patterns and intervenes before you drift.
+An AI-powered focus companion that studies your work patterns and intervenes before you get distracted.
 
----
+## What is Stride?
 
-**The Problem**
+Most focus tools react after you've already lost concentration. Stride flips that. It learns how you work over time, spots patterns in when and why you lose focus, and sends context-aware nudges before it happens.
 
-The average person loses 2 hours a day to unplanned distraction. That's 30 days a year. Gone.
+The more you use it, the smarter it gets.
 
-Not because you're lazy. Because nothing warned you it was happening.
+## How It Works
 
-Focus apps today are reactive. They show you a report after the day is over. But that doesn't help. You already know you got distracted. You need something that warns you before it happens.
+Stride tracks signals from your focus sessions like time of day, task type, session duration, and how you've responded to past interventions. It feeds this data to Claude (via the Anthropic API) to:
 
----
+- **Predict** when you're most likely to drift based on your personal patterns
+- **Calculate** the best moment to intervene
+- **Generate** nudges that are specific to what you're doing right now, not generic motivation quotes
 
-**The Solution**
+Every intervention gets a quality check before it reaches you. Your responses (engaged, dismissed, or ignored) feed back into the system so predictions improve over time.
 
-Stride is a focus companion that builds your focus fingerprint.
+## Features
 
-During each session, Stride checks in at key moments. You tell it how you're feeling: focused, drifting, or lost. If you're struggling, you tap why: mind wandering, feeling stuck, tired, or distracted.
+- **Pattern-based focus prediction** that adapts to your behavior
+- **Dynamic intervention timing** based on session context
+- **Intervention effectiveness tracking** with real-time feedback loops
+- **A/B testing** to continuously improve nudge quality
+- **Focus session dashboard** with trends, history, and pattern insights
+- **Google OAuth** authentication
+- **Full observability** via Opik integration across all AI calls
 
-Over time, Stride learns your patterns. When you drift. Why you drift. What helps you recover.
+## Tech Stack
 
-Then it uses your focus fingerprint to intervene at the right moment. Before you lose focus. Not after.
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js 14, TypeScript |
+| Database & Auth | Supabase |
+| AI | Anthropic SDK (Claude) |
+| Observability | Opik SDK |
+| Styling | Tailwind CSS |
 
----
+## Getting Started
 
-**How It Works**
+### Prerequisites
 
-1. Start a focus session with a task and duration
-2. Stride checks in at 20%, 50%, and 80% of your session
-3. You give quick feedback on your focus state
-4. Stride builds your focus fingerprint across sessions
-5. Interventions become personalized to you
-
----
-
-**Tech Stack**
-
-- Next.js 14 (App Router)
-- TypeScript
-- Supabase (database and auth)
-- Claude API (Haiku)
-- Opik SDK for observability
-
----
-
-**Opik Integration**
-
-Stride uses Opik to track every AI interaction and measure what works.
-
-What we log:
-- Intervention generation (prompt, response, latency, tokens)
-- Intervention outcomes (user action, focus state, drift reason)
-- LLM-as-judge evaluations (helpfulness, timing, tone)
-- Session summaries (acceptance rate, effectiveness rate)
-- Pattern analysis with confidence scores
-
-What we measure:
-- A/B test performance across 9 message and timing combinations
-- Intervention effectiveness by checkpoint
-- Break effectiveness
-- Focus state patterns by task type
+- Node.js 18+
+- A Supabase project
+- Anthropic API key
+- Opik API key
 
 
----
+## How Pattern Recognition Works
 
-**Screenshots**
+Stride doesn't just track whether you stayed focused. It builds a picture of your focus behavior over time.
 
-[App session screen]
+For example, if you consistently lose concentration 25 minutes into deep work sessions in the afternoon, Stride picks that up. Next time you're in a similar session, it intervenes at minute 22 instead of waiting for you to zone out.
 
-[Intervention with feedback flow]
+The pattern analysis runs through Claude as the reasoning engine, processing your accumulated session data to find trends and adjust intervention timing and messaging accordingly.
 
-[A/B testing dashboard]
+## Project Structure
 
-[Opik traces]
+```
+stride/
+├── app/                  # Next.js app router pages
+├── components/           # React components
+├── lib/                  # Core logic
+│   ├── ai/               # Claude integration, prediction engine
+│   ├── supabase/         # Database client and queries
+│   └── opik/             # Observability and logging
+├── types/                # TypeScript type definitions
+└── public/               # Static assets
+```
 
----
+## License
 
-**Live Demo**
-
-[Your deployed URL]
-
----
+MIT
