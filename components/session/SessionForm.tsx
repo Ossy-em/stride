@@ -162,7 +162,7 @@ export default function SessionForm() {
                   onChange={(e) =>
                     setFormData({ ...formData, plannedDuration: parseInt(e.target.value) || 25 })
                   }
-                  min={5}
+                  min={3}
                   max={120}
                 />
                 <span className="text-sm text-gray-400">min</span>

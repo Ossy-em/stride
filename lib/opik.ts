@@ -6,6 +6,55 @@ const opik = new Opik({
   apiKey: process.env.OPIK_API_KEY,
 });
 
+// Local in-memory trace cache for quick access (useful in dev or when reading recent traces)
+const localTraces: Array<any> = [];
+
+// Wrapper around opik.trace that also stores a local copy for quick read access
+async function opikTrace(params: { name: string; input?: any; output?: any; metadata?: Record<string, any>; tags?: string[]; }) {
+  try {
+    await opik.trace(params);
+    const traceRecord = {
+      name: params.name,
+      input: params.input,
+      output: params.output,
+      metadata: params.metadata,
+      tags: params.tags,
+      timestamp: new Date().toISOString(),
+      success: true,
+    };
+    localTraces.push(traceRecord);
+    return traceRecord;
+  } catch (err) {
+    const traceRecord = {
+      name: params.name,
+      input: params.input,
+      output: params.output,
+      metadata: { ...(params.metadata || {}), error: String(err) },
+      tags: params.tags,
+      timestamp: new Date().toISOString(),
+      success: false,
+      error: String(err),
+    };
+    localTraces.push(traceRecord);
+    // rethrow so callers preserve current behavior
+    throw err;
+  }
+}
+
+export function getTraces() {
+  return localTraces;
+}
+
+export function getTraceSummary() {
+  const total = localTraces.length;
+  const byName: Record<string, number> = {};
+  for (const t of localTraces) {
+    byName[t.name] = (byName[t.name] || 0) + 1;
+  }
+  const lastTrace = localTraces[localTraces.length - 1] ?? null;
+  return { total, byName, lastTrace };
+} 
+
 // CORE LOGGING FUNCTION
 export async function logAICall(params: {
   name: string;
@@ -22,7 +71,7 @@ export async function logAICall(params: {
     const latency = endTime - startTime;
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await opik.trace({
+    await opikTrace({
       name,
       input,
       output,
@@ -57,7 +106,7 @@ export async function logEvaluation(params: {
     const { name, traceId, score, metadata } = params;
     const evalId = `eval_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await opik.trace({
+    await opikTrace({
       name: `eval:${name}`,
       input: { 
         parent_trace_id: traceId,
@@ -116,7 +165,7 @@ export async function logInterventionOutcome(params: {
 
     const outcomeId = `outcome_${Date.now()}`;
 
-    await opik.trace({
+    await opikTrace({
       name: 'intervention_outcome',
       input: {
         intervention_trace_id: interventionTraceId,
@@ -176,7 +225,7 @@ export async function logAIError(params: {
     const { name, input, error, fallbackUsed, fallbackOutput, metadata } = params;
     const errorId = `error_${Date.now()}`;
 
-    await opik.trace({
+    await opikTrace({
       name: `error:${name}`,
       input,
       output: {
@@ -232,7 +281,7 @@ export async function logSessionSummary(params: {
     const acceptanceRate = interventionCount > 0 ? acceptedCount / interventionCount : 0;
     const effectivenessRate = interventionCount > 0 ? effectiveCount / interventionCount : 0;
 
-    await opik.trace({
+    await opikTrace({
       name: 'session_summary',
       input: {
         session_id: sessionId,

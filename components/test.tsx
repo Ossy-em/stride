@@ -310,34 +310,34 @@ function HeroSection() {
 }
 
 // Logo Bar Section
-function LogoBar() {
-  const companies = [
-    { name: 'Flowstate', logo: '/assets/logos/flowstate.svg' },
-    { name: 'DeepMind Labs', logo: '/assets/logos/deepmind-labs.svg' },
-    { name: 'Zenith', logo: '/assets/logos/zenith.svg' },
-    { name: 'Focusly', logo: '/assets/logos/focusly.svg' },
-    { name: 'Chronos', logo: '/assets/logos/chronos.svg' },
-  ];
+// function LogoBar() {
+//   const companies = [
+//     { name: 'Flowstate', logo: '/assets/logos/flowstate.svg' },
+//     { name: 'DeepMind Labs', logo: '/assets/logos/deepmind-labs.svg' },
+//     { name: 'Zenith', logo: '/assets/logos/zenith.svg' },
+//     { name: 'Focusly', logo: '/assets/logos/focusly.svg' },
+//     { name: 'Chronos', logo: '/assets/logos/chronos.svg' },
+//   ];
 
-  return (
-    <section className="py-12 bg-white border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60">
-          {companies.map((company) => (
-            <Image
-              key={company.name}
-              src={company.logo}
-              alt={company.name}
-              width={120}
-              height={40}
-              className="h-8 w-auto grayscale"
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+//   return (
+//     <section className="py-12 bg-white border-b border-gray-100">
+//       <div className="max-w-6xl mx-auto px-6">
+//         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60">
+//           {companies.map((company) => (
+//             <Image
+//               key={company.name}
+//               src={company.logo}
+//               alt={company.name}
+//               width={120}
+//               height={40}
+//               className="h-8 w-auto grayscale"
+//             />
+//           ))}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// }
 
 // Bento Features Section
 function BentoFeatures() {
@@ -1015,7 +1015,7 @@ export default function StrideLandingPage() {
     <main className="bg-white text-gray-900 overflow-x-hidden">
       <Navbar />
       <HeroSection />
-      <LogoBar />
+      {/* <LogoBar /> */}
       <BentoFeatures />
       <FeatureSections />
       <TestimonialsSection />

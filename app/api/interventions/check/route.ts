@@ -12,7 +12,6 @@ const checkInterventionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-
     const user = await getCurrentUser();
     
     if (!user) {
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Checking intervention for session ${sessionId} at ${elapsedMinutes} mins`);
 
-
+    // Fetch current session
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
       .select('*')
@@ -39,14 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-   
     if (session.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     console.log(`📋 Session: ${session.task_type}, elapsed: ${elapsedMinutes}/${session.planned_duration} mins`);
 
- 
+    // Check if intervention is needed
     const { needed, prediction } = await checkInterventionNeeded(
       user.id,
       sessionId,
@@ -70,6 +68,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check if already intervened at this checkpoint
     const { data: existingInterventions } = await supabase
       .from('interventions')
       .select('*')
@@ -84,31 +83,74 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`🚨 Intervention needed! Checkpoint: ${prediction.checkpoint}, Variant: ${prediction.variant?.variantType}, Timing: ${prediction.variant?.timingOffset}`);
+    console.log(`🚨 Intervention needed! Checkpoint: ${prediction.checkpoint}, Variant: ${prediction.variant?.variantType}`);
 
-    // Get recent check-ins for context
-    const { data: checkIns } = await supabase
-      .from('checkins')
-      .select('response')
+    // ============================================
+    // FETCH FEEDBACK DATA FOR PERSONALIZATION
+    // ============================================
+
+    // 1. Get interventions from THIS session (earlier checkpoints)
+    const { data: currentSessionInterventions } = await supabase
+      .from('interventions')
+      .select('checkpoint, focus_state, drift_reason, user_action')
       .eq('session_id', sessionId)
-      .order('timestamp', { ascending: false })
-      .limit(3);
+      .order('triggered_at', { ascending: true });
 
-    const recentCheckIns = checkIns?.map(c => c.response) || [];
+    // 2. Get recent interventions from PAST sessions (same task type)
+    const { data: pastInterventions } = await supabase
+      .from('interventions')
+      .select(`
+        checkpoint,
+        focus_state,
+        drift_reason,
+        break_effectiveness,
+        user_action,
+        sessions!inner(task_type, focus_quality)
+      `)
+      .eq('sessions.user_id', user.id)
+      .eq('sessions.task_type', session.task_type)
+      .neq('session_id', sessionId)
+      .not('focus_state', 'is', null)
+      .order('triggered_at', { ascending: false })
+      .limit(10);
 
-    // Get user's known patterns
+    // 3. Get user's known patterns (existing)
     const { data: patterns } = await supabase
       .from('patterns')
       .select('insight')
-      .eq('user_id', user.id) 
+      .eq('user_id', user.id)
       .order('detected_at', { ascending: false })
       .limit(3);
 
-    const userPatterns = patterns?.map(p => p.insight) || [];
+    // ============================================
+    // BUILD FOCUS HISTORY FOR PROMPT
+    // ============================================
+    
+    const focusHistory = {
+      // Current session context
+      currentSession: currentSessionInterventions?.map(i => ({
+        checkpoint: i.checkpoint,
+        focusState: i.focus_state,
+        driftReason: i.drift_reason,
+        action: i.user_action,
+      })) || [],
+      
+      // Past sessions summary for this task type
+      pastSessions: summarizePastInterventions(pastInterventions || []),
+      
+      // Existing pattern insights
+      patterns: patterns?.map(p => p.insight) || [],
+    };
 
-    console.log(`📊 Context: ${userPatterns.length} patterns, ${recentCheckIns.length} check-ins`);
+    console.log(`📊 Focus history:`, {
+      currentSession: focusHistory.currentSession.length,
+      pastSessions: focusHistory.pastSessions,
+      patterns: focusHistory.patterns.length,
+    });
 
-
+    // ============================================
+    // GENERATE INTERVENTION
+    // ============================================
     const intervention = await generateIntervention(
       {
         taskDescription: session.task_description,
@@ -116,17 +158,16 @@ export async function POST(request: NextRequest) {
         elapsedMinutes,
         plannedDuration: session.planned_duration,
         checkpoint: prediction.checkpoint,
-        userPatterns,
-        recentCheckIns,
+        focusHistory,
         variant: prediction.variant?.variantType,
       },
-      user.id, 
+      user.id,
       sessionId
     );
 
     console.log('💬 Generated intervention:', intervention);
 
-
+    // Save intervention to DB
     const { data: savedIntervention, error: saveError } = await supabase
       .from('interventions')
       .insert({
@@ -146,8 +187,6 @@ export async function POST(request: NextRequest) {
     } else {
       console.log(`✅ Intervention saved to DB (${prediction.checkpoint} checkpoint)`);
     }
-
-    console.log(`🎯 Intervention triggered: ${intervention.strategy} (${prediction.variant?.variantType}) at ${prediction.checkpoint}`);
 
     return NextResponse.json({
       needed: true,
@@ -181,4 +220,70 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ============================================
+// HELPER: Summarize past interventions into useful stats
+// ============================================
+function summarizePastInterventions(interventions: any[]): {
+  totalInterventions: number;
+  commonDriftReasons: { reason: string; count: number }[];
+  focusStateAtCheckpoints: { checkpoint: string; avgState: string }[];
+  breakEffectiveness: { helped: number; somewhat: number; notReally: number };
+} {
+  if (interventions.length === 0) {
+    return {
+      totalInterventions: 0,
+      commonDriftReasons: [],
+      focusStateAtCheckpoints: [],
+      breakEffectiveness: { helped: 0, somewhat: 0, notReally: 0 },
+    };
+  }
+
+  // Count drift reasons
+  const driftReasonCounts: Record<string, number> = {};
+  interventions.forEach(i => {
+    if (i.drift_reason) {
+      driftReasonCounts[i.drift_reason] = (driftReasonCounts[i.drift_reason] || 0) + 1;
+    }
+  });
+
+  const commonDriftReasons = Object.entries(driftReasonCounts)
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+
+  // Focus state by checkpoint
+  const checkpointStates: Record<string, string[]> = {};
+  interventions.forEach(i => {
+    if (i.checkpoint && i.focus_state) {
+      if (!checkpointStates[i.checkpoint]) {
+        checkpointStates[i.checkpoint] = [];
+      }
+      checkpointStates[i.checkpoint].push(i.focus_state);
+    }
+  });
+
+  const focusStateAtCheckpoints = Object.entries(checkpointStates).map(([checkpoint, states]) => {
+    // Find most common state
+    const counts: Record<string, number> = {};
+    states.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+    const avgState = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+    return { checkpoint, avgState };
+  });
+
+  // Break effectiveness
+  const breakEffectiveness = { helped: 0, somewhat: 0, notReally: 0 };
+  interventions.forEach(i => {
+    if (i.break_effectiveness === 'helped') breakEffectiveness.helped++;
+    if (i.break_effectiveness === 'somewhat') breakEffectiveness.somewhat++;
+    if (i.break_effectiveness === 'not_really') breakEffectiveness.notReally++;
+  });
+
+  return {
+    totalInterventions: interventions.length,
+    commonDriftReasons,
+    focusStateAtCheckpoints,
+    breakEffectiveness,
+  };
 }

@@ -11,54 +11,69 @@ export function buildPatternAnalysisPrompt(sessions: Session[]): string {
     actual: s.actual_duration,
     focus: s.focus_quality,
     distractions: s.distraction_count,
-    time: new Date(s.started_at).toLocaleString('en-US', { 
-      weekday: 'short', 
-      hour: 'numeric', 
-      hour12: true 
+    time: new Date(s.started_at).toLocaleString('en-US', {
+      weekday: 'short',
+      hour: 'numeric',
+      hour12: true,
     }),
   }));
 
-  return `Analyze this user's focus patterns from their recent work sessions.
+  return `You are analyzing a user's real focus behavior based ONLY on the data provided.
 
 Sessions (most recent first):
 ${JSON.stringify(sessionData, null, 2)}
 
-Task types explained:
+Task types:
 - "coding" = Development & Technical Work
-- "writing" = Writing & Creative Work  
+- "writing" = Writing & Creative Work
 - "reading" = Reading & Learning
 
-Identify specific patterns:
-1. When does focus typically drop? (time into session, time of day)
-2. Which task types show best focus quality?
-3. Optimal session length per task type
-4. Any triggers for distraction (task switching, time of day, session length)
+Analyze and identify evidence-backed patterns.
 
-Return ONLY a JSON object with this structure:
+QUESTIONS TO ANSWER:
+1. When does focus drop? (time into session, time of day)
+2. Which task types sustain focus best?
+3. Optimal session length per task type
+4. Triggers for distraction (fatigue, task switching, session length)
+
+RULES:
+- Do NOT invent patterns
+- Patterns must be supported by at least 3 sessions
+- If evidence is weak or mixed, lower confidence
+- It is OK to say no strong patterns exist
+
+Return ONLY this JSON structure:
 {
   "patterns": [
     {
-      "type": "session_length",
-      "insight": "Focus drops after 45 minutes on writing tasks",
-      "confidence": 0.85
-    },
-    {
-      "type": "time_of_day", 
-      "insight": "Morning sessions (9-11am) show 30% better focus for reading",
-      "confidence": 0.75
+      "type": "session_length | time_of_day | task_type | distraction_trigger",
+      "insight": "Specific observation grounded in the data",
+      "confidence": 0.0-1.0,
+      "evidence": {
+        "supporting_sessions": 0,
+        "contradicting_sessions": 0,
+        "notes": "Brief justification using session data"
+      }
     }
   ],
   "recommendations": [
-    "Schedule writing tasks for morning hours when focus peaks",
-    "Keep reading sessions under 40 minutes for optimal retention"
-  ]
+    {
+      "suggestion": "Concrete scheduling or session adjustment",
+      "based_on": "Referenced pattern insight"
+    }
+  ],
+  "data_quality": {
+    "session_count": ${sessions.length},
+    "reliability": "low | medium | high",
+    "notes": "Explain uncertainty or inconsistencies if any"
+  }
 }
 
-Be specific and data-driven. Avoid generic advice. If patterns aren't clear yet (less than 5 sessions), say so.`;
+Be precise. Avoid generic productivity advice.`;
 }
 
 // ============================================
-// INTERVENTION PROMPT - COMPANION VOICE
+// INTERVENTION PROMPT
 // ============================================
 export function buildInterventionPrompt(context: {
   taskDescription: string;
@@ -66,114 +81,191 @@ export function buildInterventionPrompt(context: {
   elapsedMinutes: number;
   plannedDuration: number;
   checkpoint: 'early' | 'mid' | 'late';
-  userPatterns: string[];
-  recentCheckIns: string[];
+  focusHistory: {
+    currentSession: Array<{
+      checkpoint: string;
+      focusState: string | null;
+      driftReason: string | null;
+      action: string | null;
+    }>;
+    pastSessions: {
+      totalInterventions: number;
+      commonDriftReasons: Array<{ reason: string; count: number }>;
+      focusStateAtCheckpoints: Array<{ checkpoint: string; avgState: string }>;
+      breakEffectiveness: { helped: number; somewhat: number; notReally: number };
+    };
+    patterns: string[];
+  };
 }): string {
-  
-  const percentComplete = Math.round((context.elapsedMinutes / context.plannedDuration) * 100);
   const minutesLeft = context.plannedDuration - context.elapsedMinutes;
+  const isShortSession = context.plannedDuration <= 15;
 
-  // Context about the user
-  const userContext = context.userPatterns.length > 0 
-    ? `\nWhat we know about this user:\n${context.userPatterns.map(p => `- ${p}`).join('\n')}`
-    : '';
+  const personalization = buildPersonalizationContext(context);
 
-  const recentMood = context.recentCheckIns.length > 0
-    ? `\nRecent check-ins this session: ${context.recentCheckIns.join(', ')}`
-    : '';
+  const checkpointRules: Record<string, string> = {
+    early: `CHECKPOINT: EARLY (${context.elapsedMinutes}/${context.plannedDuration} mins)
 
-  const checkpointGuidance = {
-    early: `EARLY CHECKPOINT (${percentComplete}% in, ${context.elapsedMinutes} mins)
+GOAL: Gentle awareness only.
 
-Purpose: Light touch. They're building momentum. Don't disrupt — just let them know you're here.
+RULES:
+- DO NOT mention breaks
+- DO NOT give time advice
+- Just check in
 
-Tone: Casual, brief, encouraging. Like a friend poking their head in.
+Examples:
+- "Quick check. How's it going?"
+- "${context.elapsedMinutes} mins in. Still settling?"
+- "Checking in. Locked in?"`,
 
-Good examples:
-- "How's it going so far?"
-- "${context.elapsedMinutes} mins in. Finding your groove?"
-- "Settling in okay?"
+    mid: `CHECKPOINT: MID (${context.elapsedMinutes}/${context.plannedDuration} mins, ${minutesLeft} left)
 
-Bad examples:
-- "Great job so far!" (too cheerleader-y)
-- "Keep up the amazing work!" (cringe)
-- "You've got this, buddy!" (AI voice)`,
+GOAL: Focus check without disruption.
 
-   mid: `MID CHECKPOINT (${percentComplete}% in, ${context.elapsedMinutes} mins)
+RULES:
+- DO NOT suggest long breaks
+- Keep neutral and supportive
 
-Purpose: This is where focus typically wavers. Acknowledge that this part is hard. Don't be a cheerleader.
+Examples:
+- "Halfway through. Focus holding?"
+- "${minutesLeft} mins left. How are you feeling?"
+- "Midpoint check. Still on track?"`,
 
-Tone: Calm, real, understanding. You know this is the tough part. Don't pump them up — just check in.
+    late: `CHECKPOINT: LATE (${context.elapsedMinutes}/${context.plannedDuration} mins, ${minutesLeft} left)
 
-GOOD examples (use this style):
-- "Halfway there. Still with it?"
-- "This is usually the hard part. How's focus?"
-- "${context.elapsedMinutes} mins in. Doing okay?"
-- "Past the middle. Still locked in?"
+GOAL: Encourage completion.
 
-BAD examples (NEVER use):
-- "You're in the thick of it!" (too intense)
-- "Keep pushing!" (cheerleader)
-- "Can you push to X mins strong?" (pressure)
-- "You're crushing it!" (cringe)
-- Any message with exclamation marks
+RULES:
+- ${isShortSession ? 'DO NOT suggest breaks over 30 seconds.' : 'Short physical reset allowed.'}
+- Keep suggestions brief
 
-Your message must be CALM. No exclamation marks. No "push" or "strong" or "crushing".`,
-
-    late: `LATE CHECKPOINT (${percentComplete}% in, ${minutesLeft} mins left)
-
-Purpose: They're in the home stretch. Suggest a quick physical reset — stretch, move, breathe. Bodies need it.
-
-Tone: Practical and caring. Like someone who notices you've been hunched over too long.
-
-Good examples:
-- "${minutesLeft} mins left. Roll your shoulders real quick?"
-- "Almost there. When did you last blink properly?"
-- "Home stretch. Hands feeling tight? Shake 'em out."
-- "Final push. Take 3 deep breaths first?"
-
-Bad examples:
-- "You're almost at the finish line!" (cheesy)
-- "Final sprint!" (too intense)
-- "Don't give up now!" (implies they might)`
+Examples:
+- "Almost there. Roll your shoulders?"
+- "${minutesLeft} mins left. Deep breath?"
+- "Final stretch. Still good?"`,
   };
 
-  return `You're a focus companion for someone who struggles with concentration. They're ${context.elapsedMinutes} minutes into a ${context.plannedDuration}-minute session working on: "${context.taskDescription}"
+  return `You are generating a short focus intervention message.
 
-${checkpointGuidance[context.checkpoint]}
-${userContext}
-${recentMood}
+SESSION:
+- Task: "${context.taskDescription}"
+- Duration: ${context.plannedDuration} minutes
+- Elapsed: ${context.elapsedMinutes} minutes
+- Remaining: ${minutesLeft} minutes
+${isShortSession ? '- SHORT SESSION. Avoid breaks.\n' : ''}
+${checkpointRules[context.checkpoint]}
 
-CRITICAL RULES:
-1. This is a ${context.plannedDuration}-MINUTE session. NEVER mention any other duration.
-2. They are ${context.elapsedMinutes} mins in, ${minutesLeft} mins left. Use ONLY these numbers.
-3. NEVER say "you've got this", "great progress", "amazing", "buddy", "friend"
-4. 8-15 words MAXIMUM. No long sentences.
-5. Sound like a calm text from a friend, not a coach
-6. ONE emoji max, only if natural
-7. For LATE checkpoint: suggest something physical (stretch, breathe, move)
-8. NEVER invent or hallucinate numbers. Only use: ${context.elapsedMinutes}, ${minutesLeft}, ${context.plannedDuration}, ${percentComplete}%
+INTERVENTION INTENT:
+Choose ONE intent that fits best:
+- awareness
+- refocus
+- momentum
+- closure
 
-Return ONLY a JSON object:
+ADAPTATION RULE:
+- If similar past interventions were ineffective ("notReally"),
+  avoid repeating the same style or suggestion.
+
+${personalization}
+
+FORMAT RULES:
+- 8–15 words max
+- Calm, human tone
+- No corporate language
+- Avoid: "breather", "recharge", "you've got this", "great job"
+- Max 1 emoji if natural
+- Do NOT mention specific break durations unless session ≥ 30 minutes
+
+Return ONLY this JSON:
 {
-  "message": "Your message here",
-  "strategy": "push_through" | "check_in" | "take_break",
-  "reasoning": "Brief explanation of why this message"
-}
-
-Strategy guide:
-- early → "push_through" (let them build momentum)
-- mid → "check_in" (acknowledge the hard middle part)
-- late → "take_break" (quick physical reset before final push)
-
-Write the message now.`;
+  "message": "Your message",
+  "intent": "awareness | refocus | momentum | closure",
+  "reasoning": "One sentence explaining why this intent fits now"
+}`;
 }
 
 // ============================================
-// DASHBOARD INSIGHTS PROMPT - COMPANION VOICE
+// PERSONALIZATION CONTEXT
+// ============================================
+function buildPersonalizationContext(context: {
+  taskType: string;
+  checkpoint: 'early' | 'mid' | 'late';
+  focusHistory: {
+    currentSession: Array<{
+      checkpoint: string;
+      focusState: string | null;
+      driftReason: string | null;
+      action: string | null;
+    }>;
+    pastSessions: {
+      totalInterventions: number;
+      commonDriftReasons: Array<{ reason: string; count: number }>;
+      focusStateAtCheckpoints: Array<{ checkpoint: string; avgState: string }>;
+      breakEffectiveness: { helped: number; somewhat: number; notReally: number };
+    };
+    patterns: string[];
+  };
+}): string {
+  const { focusHistory, checkpoint, taskType } = context;
+  const lines: string[] = [];
+
+  lines.push('USER CONTEXT (for personalization):');
+  lines.push('PRIORITY ORDER: current session > past checkpoint trends > long-term patterns');
+
+  if (focusHistory.currentSession.length > 0) {
+    const last = focusHistory.currentSession.at(-1);
+    if (last?.focusState) {
+      lines.push(
+        `- Earlier this session: "${last.focusState}"${
+          last.driftReason ? ` due to ${formatReason(last.driftReason)}` : ''
+        }`
+      );
+    }
+  }
+
+  if (focusHistory.pastSessions.totalInterventions > 0) {
+    const past = focusHistory.pastSessions;
+
+    if (past.commonDriftReasons.length > 0) {
+      lines.push(
+        `- Common struggle during ${taskType}: ${formatReason(
+          past.commonDriftReasons[0].reason
+        )}`
+      );
+    }
+
+    const checkpointState = past.focusStateAtCheckpoints.find(
+      c => c.checkpoint === checkpoint
+    );
+    if (checkpointState) {
+      lines.push(`- Usually feels "${checkpointState.avgState}" at this point`);
+    }
+  }
+
+  if (focusHistory.patterns.length > 0) {
+    lines.push(`- Known pattern: ${focusHistory.patterns[0]}`);
+  }
+
+  if (lines.length <= 2) {
+    lines.push('- New user. Keep message simple.');
+  }
+
+  return lines.join('\n');
+}
+
+function formatReason(reason: string): string {
+  const map: Record<string, string> = {
+    mind_wandering: 'mind wandering',
+    feeling_stuck: 'feeling stuck',
+    tired: 'feeling tired',
+    external: 'external distractions',
+  };
+  return map[reason] || reason;
+}
+
+// ============================================
+// DASHBOARD INSIGHTS PROMPT
 // ============================================
 export function buildDashboardInsightsPrompt(sessions: Session[]): string {
-  // Process session data
   const sessionData = sessions.map(s => ({
     task_type: s.task_type,
     focus_quality: s.focus_quality,
@@ -182,49 +274,31 @@ export function buildDashboardInsightsPrompt(sessions: Session[]): string {
     distractions: s.distraction_count,
     day: new Date(s.started_at).toLocaleDateString('en-US', { weekday: 'long' }),
     hour: new Date(s.started_at).getHours(),
-    completed: s.actual_duration && s.actual_duration >= (s.planned_duration * 0.8),
   }));
 
-  // Calculate some stats for context
   const totalSessions = sessionData.length;
-  const avgFocus = sessionData.reduce((sum, s) => sum + (s.focus_quality || 0), 0) / totalSessions;
+  const avgFocus =
+    sessionData.reduce((sum, s) => sum + (s.focus_quality || 0), 0) /
+    Math.max(totalSessions, 1);
   const totalMinutes = sessionData.reduce((sum, s) => sum + (s.duration || 0), 0);
 
-  return `Generate 2-3 insights for someone who struggles with focus. These appear on their home screen.
+  return `Generate 2–3 concise dashboard insights.
 
-SESSION DATA (${totalSessions} sessions, ${totalMinutes} total minutes, ${avgFocus.toFixed(1)} avg focus):
+SUMMARY:
+- ${totalSessions} sessions
+- ${totalMinutes} total minutes
+- ${avgFocus.toFixed(1)} average focus
+
+DATA:
 ${JSON.stringify(sessionData, null, 2)}
 
-YOUR ROLE:
-You're their focus companion. You notice patterns and share observations that help them understand their own brain better. You're not grading them — you're helping them discover what works FOR THEM.
+RULES:
+- 12–20 words per insight
+- Use real numbers
+- At least one comparison (task types, time of day, planned vs actual)
+- Curious tone, not preachy
+- Avoid generic advice
 
-INSIGHT RULES:
-1. Lead with curiosity, not judgment ("Interesting — your Tuesday sessions..." not "You struggle on Tuesdays")
-2. Frame patterns as discoveries, not problems ("You focus 40% better before noon" not "Your afternoon focus is weak")
-3. Always include something encouraging or hopeful
-4. Be specific — use actual numbers from their data
-5. If they're improving, celebrate it genuinely (not cheesy)
-6. If data is limited, say so honestly and encourage more sessions
-7. Each insight: 12-20 words, one clear observation
-
-GOOD INSIGHTS:
-- "Your morning sessions average 7.8 focus — you might be a morning person."
-- "Interesting: coding sessions over 30 mins show stronger focus than shorter ones."
-- "You've completed 4 sessions this week. That consistency is building something."
-- "Wednesdays are your strongest day. Something about midweek works for you."
-
-BAD INSIGHTS:
-- "Great job on your progress!" (empty praise)
-- "You should try to focus more in the afternoons." (judgey, generic)
-- "Keep up the amazing work!" (meaningless)
-- "Your focus needs improvement on Fridays." (negative framing)
-
-IMPORTANT: Return ONLY a JSON array. No other text, no markdown, no explanation.
-
-Format exactly like this:
-["First insight here.", "Second insight here.", "Third insight here."]
-
-If fewer than 3 sessions, return 1-2 insights max and acknowledge limited data.
-
-Return the JSON array now.`;
+Return ONLY a JSON array:
+["Insight one.", "Insight two.", "Insight three."]`;
 }
