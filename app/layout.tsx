@@ -3,6 +3,7 @@ import './globals.css'
 import { Providers } from './providers'
 import { Inter, Syne } from 'next/font/google'
 import IOSInstallPrompt from '@/components/shared/IOSInstallPrompt';
+import FeedbackButton from '@/components/shared/FeedbackButton';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const syne = Syne({ subsets: ['latin'], variable: '--font-syne' })
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     siteName: 'Stride',
     images: [
       {
-        url: '/og.png',
+        url: '/og-v2.png',
         width: 1200,
         height: 630,
         alt: 'Stride – Predicts distraction. Protects your focus.',
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${syne.variable} font-sans`}>
         <Providers>{children}</Providers>
         <IOSInstallPrompt />
+        <FeedbackButton />
       </body>
     </html>
   )
