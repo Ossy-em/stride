@@ -1,50 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Square, Sparkles } from 'lucide-react';
+import { Square, Sparkles, Bell, BellOff } from 'lucide-react';
 import CheckInModal from './CheckInModal';
 import InterventionNotification from './InterventionNotification';
-
-const requestNotificationPermission = async () => {
-  if (typeof window === 'undefined' || !('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
-  if (Notification.permission !== 'denied') {
-    const permission = await Notification.requestPermission();
-    return permission === 'granted';
-  }
-  return false;
-};
-
-const sendNotification = (title: string, body: string) => {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    const notification = new Notification(title, {
-      body,
-      icon: '/favicon.ico',
-      tag: 'stride-intervention',
-      requireInteraction: true,
-    });
-    notification.onclick = () => { window.focus(); notification.close(); };
-    setTimeout(() => notification.close(), 30000);
-  }
-};
-
-const isNotificationBlocked = () => {
-  if (typeof window === 'undefined' || !('Notification' in window)) return false;
-  return Notification.permission === 'denied';
-};
+import { setupPushNotifications, type PushSetupResult } from '@/lib/push-subscription';
 
 interface ActiveTimerProps {
   sessionId: string;
   taskDescription: string;
   plannedDuration: number;
+  startedAt: string;
 }
 
-export default function ActiveTimer({ sessionId, taskDescription, plannedDuration }: ActiveTimerProps) {
+export default function ActiveTimer({ sessionId, taskDescription, plannedDuration, startedAt }: ActiveTimerProps) {
   const router = useRouter();
   
-  const [sessionStartTime] = useState(() => Date.now());
+ const [sessionStartTime] = useState(() => {
+const dbTime = new Date(startedAt.endsWith('Z') ? startedAt : startedAt + 'Z').getTime();
+  const now = Date.now();
+  // If the DB time is in the future (timezone issue) or way too far in the past, fallback
+  if (dbTime > now || now - dbTime > plannedDuration * 60 * 1000 * 3) {
+    return now;
+  }
+  return dbTime;
+});
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [lastCheckInTime, setLastCheckInTime] = useState(0);
@@ -52,18 +33,70 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
   const [showIntervention, setShowIntervention] = useState(false);
   const [interventionCount, setInterventionCount] = useState(0);
   const [interventionShownAt, setInterventionShownAt] = useState<number | null>(null);
-  const [notificationPermission, setNotificationPermission] = useState<boolean | null>(null);
+  const [pushStatus, setPushStatus] = useState<PushSetupResult>({
+    supported: false, subscribed: false, permission: null,
+  });
   const [showNotificationHelp, setShowNotificationHelp] = useState(false);
 
   const CHECK_IN_INTERVAL = 20 * 60;
+  const lastInterventionCheck = useRef(0);
+  const shownInterventionIds = useRef<Set<string>>(new Set());
 
+  // Helper to show an intervention only if we haven't shown it before
+  const showInterventionIfNew = useCallback((interventionData: any) => {
+    if (!interventionData?.id) return false;
+    if (shownInterventionIds.current.has(interventionData.id)) return false;
+    if (showIntervention) return false;
+
+    shownInterventionIds.current.add(interventionData.id);
+    setIntervention(interventionData);
+    setShowIntervention(true);
+    setInterventionShownAt(Date.now());
+    setInterventionCount(prev => prev + 1);
+    return true;
+  }, [showIntervention]);
+
+  // Check for pending interventions (sent while app was backgrounded)
+  const checkPendingInterventions = useCallback(async () => {
+    if (showIntervention) return;
+
+    try {
+      const response = await fetch(`/api/interventions/pending?sessionId=${sessionId}`);
+      const data = await response.json();
+
+      if (data.pending && data.intervention) {
+        showInterventionIfNew(data.intervention);
+      }
+    } catch (error) {
+      console.error('Error checking pending interventions:', error);
+    }
+  }, [sessionId, showIntervention, showInterventionIfNew]);
+
+  // Setup push notifications on mount
   useEffect(() => {
-    requestNotificationPermission().then((granted) => {
-      setNotificationPermission(granted);
-      if (!granted && isNotificationBlocked()) setShowNotificationHelp(true);
+    setupPushNotifications().then((status) => {
+      setPushStatus(status);
+      if (status.supported && !status.subscribed && status.permission === 'denied') {
+        setShowNotificationHelp(true);
+      }
     });
   }, []);
 
+  // Check for pending interventions on mount and when app regains focus
+  useEffect(() => {
+    checkPendingInterventions();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkPendingInterventions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [checkPendingInterventions]);
+
+  // Timer
   useEffect(() => {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -76,11 +109,14 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     return () => clearInterval(interval);
   }, [sessionStartTime, lastCheckInTime]);
 
+  // Intervention check - runs every minute (backup for when tab is active)
   useEffect(() => {
     const checkForIntervention = async () => {
       const elapsedMins = Math.floor(elapsedSeconds / 60);
       if (interventionCount >= 3 || elapsedMins < 1 || showIntervention) return;
-      
+      if (elapsedMins <= lastInterventionCheck.current) return;
+      lastInterventionCheck.current = elapsedMins;
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -94,11 +130,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
         const data = await response.json();
 
         if (data.needed && data.intervention) {
-          sendNotification('Stride — Focus Check', data.intervention.message);
-          setIntervention(data.intervention);
-          setShowIntervention(true);
-          setInterventionShownAt(Date.now());
-          setInterventionCount(prev => prev + 1);
+          showInterventionIfNew(data.intervention);
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
@@ -110,7 +142,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     if (elapsedSeconds > 0 && elapsedSeconds % 60 === 0) {
       checkForIntervention();
     }
-  }, [elapsedSeconds, sessionId, showIntervention, interventionCount]);
+  }, [elapsedSeconds, sessionId, showIntervention, interventionCount, showInterventionIfNew]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -122,6 +154,12 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
   const progressPercentage = Math.min((elapsedSeconds / (plannedDuration * 60)) * 100, 100);
 
   const handleEndSession = () => router.push(`/session/end?id=${sessionId}`);
+
+  const handleRetryNotifications = async () => {
+    const status = await setupPushNotifications();
+    setPushStatus(status);
+    if (status.subscribed) setShowNotificationHelp(false);
+  };
 
   const handleFeedbackComplete = async (data: {
     action: 'accepted' | 'dismissed';
@@ -148,6 +186,13 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     }
   };
 
+  const NotificationIcon = pushStatus.subscribed ? Bell : BellOff;
+  const notificationLabel = pushStatus.subscribed
+    ? 'Notifications on'
+    : pushStatus.permission === 'denied'
+    ? 'Notifications blocked'
+    : 'Notifications off';
+
   return (
     <>
       <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#0f2a1f] via-[#143527] to-[#1a4a35]">
@@ -161,9 +206,16 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
           {showNotificationHelp && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-full max-w-md mx-auto px-4 py-3 bg-amber-500/20 border border-amber-500/30 rounded-xl backdrop-blur-sm">
               <p className="text-sm text-amber-200 text-center">
-                <strong>Notifications are blocked.</strong> Enable them in browser settings for focus reminders.
+                <strong>Notifications are blocked.</strong> Enable them in browser settings so Stride can reach you even when you switch tabs.
               </p>
-              <button onClick={() => setShowNotificationHelp(false)} className="mt-2 w-full text-xs text-amber-300 hover:text-amber-100">Dismiss</button>
+              <div className="flex gap-2 mt-2">
+                <button onClick={handleRetryNotifications} className="flex-1 text-xs text-amber-300 hover:text-amber-100 py-1 border border-amber-500/30 rounded-lg">
+                  Try again
+                </button>
+                <button onClick={() => setShowNotificationHelp(false)} className="flex-1 text-xs text-amber-300 hover:text-amber-100 py-1">
+                  Dismiss
+                </button>
+              </div>
             </div>
           )}
 
@@ -173,7 +225,12 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
               <span className="relative inline-flex rounded-full h-2 w-2 bg-lime-400"></span>
             </span>
             <span className="text-sm text-white/80 font-medium">Focus Session Active</span>
-            {notificationPermission === true && <span className="text-xs text-lime-400/60 ml-1">• Notifications on</span>}
+            <span className="flex items-center gap-1 ml-1">
+              <NotificationIcon className={`w-3 h-3 ${pushStatus.subscribed ? 'text-lime-400/60' : 'text-amber-400/60'}`} />
+              <span className={`text-xs ${pushStatus.subscribed ? 'text-lime-400/60' : 'text-amber-400/60'}`}>
+                {notificationLabel}
+              </span>
+            </span>
           </div>
 
           <div className="relative">
