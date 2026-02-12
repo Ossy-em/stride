@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -11,33 +11,54 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // When user signs in with Google, save them to Supabase
-      if (user.email) {
-        const { data: existingUser } = await supabase
+      if (!user.email) return false;
+
+      // Check if user already exists in Supabase
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', user.email)
+        .single();
+
+      if (!existingUser) {
+        // Create new user with the NextAuth-generated ID
+        await supabaseAdmin.from('users').insert({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        });
+      }
+
+      return true;
+    },
+    async jwt({ token, user, account }) {
+      // On first sign-in, look up the Supabase user ID by email
+      // This ensures the same email ALWAYS gets the same ID
+      if (account && user?.email) {
+        const { data: dbUser } = await supabaseAdmin
           .from('users')
-          .select('*')
+          .select('id')
           .eq('email', user.email)
           .single();
 
-        if (!existingUser) {
-          // Create new user in Supabase
-          await supabase.from('users').insert({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-          });
+        if (dbUser) {
+          token.sub = dbUser.id;
         }
       }
-      return true;
+
+      return token;
     },
     async session({ session, token }) {
-      // Add user ID to session
       if (session.user) {
         session.user.id = token.sub!;
       }
       return session;
     },
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/auth/signin',
