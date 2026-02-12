@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { z } from 'zod';
 import { analyzeUserPatterns } from '@/lib/ai-service';
 import { logEvaluation, logSessionSummary } from '@/lib/opik';
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const validatedData = endSessionSchema.parse(body);
 
     // Verify session ownership
-    const { data: session } = await supabase
+    const { data: session } = await supabaseAdmin
       .from('sessions')
       .select('user_id')
       .eq('id', validatedData.sessionId)
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update session with final data
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('sessions')
       .update({
         actual_duration: validatedData.actualDuration,
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
    
     // FETCH INTERVENTIONS FOR STATS & LOGGING
     
-    const { data: interventions, error: interventionsError } = await supabase
+    const { data: interventions, error: interventionsError } = await supabaseAdmin
       .from('interventions')
       .select('*')
       .eq('session_id', validatedData.sessionId);
@@ -98,10 +98,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Session ${validatedData.sessionId} ended: ${validatedData.focusQuality}/10, ${allInterventions.length} interventions`);
 
-    // ============================================
     // PATTERN ANALYSIS (if enough sessions)
-    // ============================================
-    const { data: userSessions } = await supabase
+    const { data: userSessions } = await supabaseAdmin
       .from('sessions')
       .select('*')
       .eq('user_id', user.id)
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
       if (analysis.patterns && analysis.patterns.length > 0) {
         // Save patterns to database
         for (const pattern of analysis.patterns) {
-          await supabase.from('patterns').insert({
+          await supabaseAdmin.from('patterns').insert({
             user_id: user.id,
             pattern_type: pattern.type,
             insight: pattern.insight,
