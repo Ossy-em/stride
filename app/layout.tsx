@@ -1,7 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Providers } from './providers'
 import { Inter, Syne } from 'next/font/google'
+import IOSInstallPrompt from '@/components/shared/IOSInstallPrompt';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const syne = Syne({ subsets: ['latin'], variable: '--font-syne' })
@@ -33,7 +34,25 @@ export const metadata: Metadata = {
     description: 'Predicts distraction. Protects your focus.',
     images: ['/og.png'],
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Stride',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
+
 }
+
+export const viewport: Viewport = {
+  themeColor: '#0f2a1f',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+};
 
 export default function RootLayout({
   children,
@@ -44,6 +63,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${syne.variable} font-sans`}>
         <Providers>{children}</Providers>
+        <IOSInstallPrompt />
       </body>
     </html>
   )
