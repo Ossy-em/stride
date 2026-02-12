@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 import SessionComplete from '@/components/session/SessionComplete';
 
@@ -15,14 +15,14 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
     notFound();
   }
 
-  // Auth check - prevent unauthorized access
+  // Auth check
   const user = await getCurrentUser();
   if (!user) {
     redirect('/auth/signin');
   }
 
   // Fetch session details
-  const { data: session, error } = await supabase
+  const { data: session, error } = await supabaseAdmin
     .from('sessions')
     .select('*')
     .eq('id', sessionId)
@@ -43,17 +43,22 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
     redirect('/dashboard');
   }
 
+  // Mark session as ended immediately so the cron stops sending notifications
+  await supabaseAdmin
+    .from('sessions')
+    .update({ ended_at: new Date().toISOString() })
+    .eq('id', sessionId);
+
   // Calculate elapsed time
   const startTime = new Date(session.started_at + 'Z').getTime();
-  const now = new Date().getTime();
+  const now = Date.now();
   const elapsedMs = now - startTime;
   const elapsedMinutes = Math.max(1, Math.round(elapsedMs / 1000 / 60));
 
-  // Optionally fetch streak info for display
-  // This is a simplified version - you can enhance this
+  // Fetch streak info
   let currentStreak = 0;
   try {
-    const { data: recentSessions } = await supabase
+    const { data: recentSessions } = await supabaseAdmin
       .from('sessions')
       .select('started_at')
       .eq('user_id', session.user_id)
@@ -62,7 +67,6 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
       .limit(30);
 
     if (recentSessions && recentSessions.length > 0) {
-      // Simple streak calculation
       const sessionDates = new Set(
         recentSessions.map((s) => {
           const d = new Date(s.started_at);
@@ -71,7 +75,7 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
       );
 
       const checkDate = new Date();
-      checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday
+      checkDate.setDate(checkDate.getDate() - 1);
 
       while (true) {
         const dateStr = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
