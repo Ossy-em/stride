@@ -26,11 +26,12 @@ export default async function ActiveSessionPage({ searchParams }: PageProps) {
     notFound();
   }
 
-  return (
-    <ActiveTimer
-      sessionId={session.id}
-      taskDescription={session.task_description}
-      plannedDuration={session.planned_duration}
-    />
-  );
+ return (
+  <ActiveTimer
+    sessionId={session.id}
+    taskDescription={session.task_description}
+    plannedDuration={session.planned_duration}
+    startedAt={session.started_at}
+  />
+);
 }
