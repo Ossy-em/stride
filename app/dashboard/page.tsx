@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Zap, RefreshCw } from 'lucide-react';
 import type { DashboardResponse } from '@/types';
+import DashboardWrapper from '@/components/shared/DashboardWrapper';
 
 // Home components
 import GreetingCard from '@/components/home/GreetingCard';
@@ -107,6 +108,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <DashboardWrapper>
     <div className="min-h-screen bg-gray-50">
       {/* Simple Header */}
       <header className="bg-white border-b border-gray-100">
@@ -177,5 +179,6 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+    </DashboardWrapper>
   );
 }
