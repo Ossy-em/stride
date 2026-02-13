@@ -9,9 +9,7 @@ import { applyVariantStyle, type MessageVariant } from './ab-testing';
 import { logAIError } from './opik';
 import type { Session } from '@/types';
 
-
-// RESPONSE SCHEMAS (Zod validation)
-
+// RESPONSE SCHEMAS
 const interventionResponseSchema = z.object({
   message: z.string().min(1).max(200),
   intent: z.enum(['awareness', 'refocus', 'momentum', 'closure']),
@@ -22,18 +20,46 @@ const patternSchema = z.object({
   type: z.string(),
   insight: z.string(),
   confidence: z.number().min(0).max(1),
+  evidence: z.object({
+    supporting_sessions: z.number(),
+    contradicting_sessions: z.number(),
+    notes: z.string(),
+  }).optional(),
 });
+
+const focusFingerprintSchema = z.object({
+  drift_minute: z.number().nullable(),
+  peak_hours: z.object({
+    start: z.number(),
+    end: z.number(),
+  }),
+  best_day: z.string(),
+  best_task_type: z.string(),
+  optimal_session_length: z.number(),
+  growth_percentage: z.number(),
+  focus_style: z.enum(['sprinter', 'marathoner', 'steady', 'variable']),
+}).optional();
+
+const recommendationSchema = z.object({
+  suggestion: z.string(),
+  based_on: z.string(),
+  expected_impact: z.string().optional(),
+}).or(z.string());
 
 const patternAnalysisSchema = z.object({
   patterns: z.array(patternSchema),
-  recommendations: z.array(z.string()),
+  recommendations: z.array(recommendationSchema),
+  focus_fingerprint: focusFingerprintSchema.optional(),
+  data_quality: z.object({
+    session_count: z.number(),
+    reliability: z.enum(['low', 'medium', 'high']),
+    notes: z.string(),
+  }).optional(),
 });
 
 const insightsSchema = z.array(z.string().min(1).max(300));
 
-// ============================================
 // PATTERN ANALYSIS
-// ============================================
 export async function analyzeUserPatterns(
   sessions: Session[],
   userId: string
@@ -55,7 +81,14 @@ export async function analyzeUserPatterns(
       }
     );
     
-    const parsed = patternAnalysisSchema.parse(JSON.parse(response));
+    // Try to parse, handling potential markdown wrapping
+    let jsonStr = response;
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+    
+    const parsed = patternAnalysisSchema.parse(JSON.parse(jsonStr));
     return parsed;
     
   } catch (error) {
@@ -82,9 +115,7 @@ export async function analyzeUserPatterns(
   }
 }
 
-// ============================================
 // INTERVENTION GENERATION
-// ============================================
 export async function generateIntervention(
   context: {
     taskDescription: string;
@@ -151,10 +182,25 @@ export async function generateIntervention(
       }
     );
     
-    const rawParsed = JSON.parse(response);
-    const parsed = interventionResponseSchema.parse(rawParsed);
+    // Parse response, handling potential markdown wrapping
+    let jsonStr = response;
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
     
-    // Strategy is determined by checkpoint, not LLM
+    const parsed = interventionResponseSchema.parse(JSON.parse(jsonStr));
+    
+    // Validate no hallucinated time values
+    const timeNumbers = parsed.message.match(/\d+/g)?.map(Number) || [];
+    const hasInvalidTime = timeNumbers.some(n => n > context.plannedDuration && n > 60);
+    
+    if (hasInvalidTime) {
+      console.warn('⚠️ Intervention contained invalid time reference, using fallback');
+      const fallback = buildFallbackIntervention(context);
+      return { ...fallback, isFallback: true };
+    }
+    
     const strategy = getExpectedStrategy(context.checkpoint);
     
     return {
@@ -199,9 +245,7 @@ export async function generateIntervention(
   }
 }
 
-// ============================================
 // DASHBOARD INSIGHTS
-// ============================================
 export async function generateDashboardInsights(
   sessions: Session[],
   userId: string
@@ -262,9 +306,7 @@ export async function generateDashboardInsights(
   }
 }
 
-// ============================================
 // HELPER FUNCTIONS
-// ============================================
 
 function getExpectedStrategy(checkpoint: 'early' | 'mid' | 'late'): 'push_through' | 'check_in' | 'take_break' {
   switch (checkpoint) {
@@ -284,24 +326,23 @@ function buildFallbackIntervention(context: {
   strategy: 'push_through' | 'check_in' | 'take_break';
   reasoning: string;
 } {
-  const percentComplete = Math.round((context.elapsedMinutes / context.plannedDuration) * 100);
   const minutesLeft = context.plannedDuration - context.elapsedMinutes;
   
   const fallbacks = {
     early: {
-      direct: `${context.elapsedMinutes} mins in. How's it going?`,
+      direct: `${context.elapsedMinutes} min in. How's it going?`,
       question: `Finding your rhythm yet?`,
       challenge: `${context.elapsedMinutes} down. Settling in?`,
     },
     mid: {
       direct: `Halfway there. Still with it?`,
-      question: `${percentComplete}% in. How's focus?`,
+      question: `${minutesLeft} min left. Focus holding?`,
       challenge: `${context.elapsedMinutes} mins down. This is where it counts.`,
     },
     late: {
-      direct: `${minutesLeft} mins left. Roll your shoulders?`,
-      question: `Almost there. Feeling good?`,
-      challenge: `Home stretch. Deep breath?`,
+      direct: `${minutesLeft} min left. Almost there.`,
+      question: `Nearly done. Feeling good?`,
+      challenge: `Home stretch. Deep breath.`,
     },
   };
   
