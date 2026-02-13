@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 import type { FocusFingerprintData } from '@/types';
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all user sessions
-    const { data: sessions, error: sessionsError } = await supabase
+    const { data: sessions, error: sessionsError } = await supabaseAdmin
       .from('sessions')
       .select('*')
       .eq('user_id', user.id)
@@ -30,28 +30,34 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch interventions for drift pattern analysis
-    // FIX: Added 'interventions' table name that was missing
     const sessionIds = sessions.map(s => s.id);
     
-    const { data: interventions, error: interventionsError } = await supabase
+    const { data: interventions, error: interventionsError } = await supabaseAdmin
       .from('interventions')
       .select('*')
       .in('session_id', sessionIds)
-      .order('created_at', { ascending: true });
+      .order('triggered_at', { ascending: true });
 
     if (interventionsError) {
       console.error('Failed to fetch interventions:', interventionsError);
-      // Don't throw - continue without interventions data
     }
+
+    // Fetch AI-generated patterns for enriching discoveries
+    const { data: aiPatterns } = await supabaseAdmin
+      .from('patterns')
+      .select('pattern_type, insight, confidence')
+      .eq('user_id', user.id)
+      .order('detected_at', { ascending: false })
+      .limit(10);
 
     // PEAK HOURS ANALYSIS
     const peakHours = calculatePeakHours(sessions);
 
     // DRIFT PATTERN ANALYSIS
-    const driftPattern = calculateDriftPattern(interventions || []);
+    const driftPattern = calculateDriftPattern(sessions, interventions || []);
 
     // DISCOVERIES
-    const discoveries = generateDiscoveries(sessions, interventions || []);
+    const discoveries = generateDiscoveries(sessions, interventions || [], aiPatterns || []);
 
     // GROWTH ANALYSIS
     const growth = calculateGrowth(sessions);
@@ -92,7 +98,7 @@ function calculatePeakHours(sessions: any[]): FocusFingerprintData['peakHours'] 
   const hourlyStats: { [hour: number]: { total: number; count: number } } = {};
 
   sessions.forEach((s) => {
-    const hour = new Date(s.started_at).getHours();
+    const hour = new Date(s.started_at + 'Z').getHours();
     if (!hourlyStats[hour]) {
       hourlyStats[hour] = { total: 0, count: 0 };
     }
@@ -121,7 +127,6 @@ function calculatePeakHours(sessions: any[]): FocusFingerprintData['peakHours'] 
     }
   }
 
-  // Calculate improvement vs overall average
   const overallAvg =
     sessions.reduce((sum, s) => sum + s.focus_quality, 0) / sessions.length;
 
@@ -138,27 +143,59 @@ function calculatePeakHours(sessions: any[]): FocusFingerprintData['peakHours'] 
   };
 }
 
-function calculateDriftPattern(interventions: any[]): FocusFingerprintData['driftPattern'] {
+function calculateDriftPattern(
+  sessions: any[],
+  interventions: any[]
+): FocusFingerprintData['driftPattern'] {
   if (interventions.length < 3) return null;
 
-  // Map checkpoint to typical minute marks
-  const checkpointMinutes: { [key: string]: number } = {
-    'early': 5,
-    'mid': 15,
-    'late': 25,
-  };
+  // Calculate actual drift minutes from session data and intervention timing
+  const driftMinutes: number[] = [];
 
-  const estimatedMinutes = interventions
-    .map((i) => checkpointMinutes[i.checkpoint] || 10)
-    .filter(Boolean);
+  interventions.forEach((intervention) => {
+    // Find the session this intervention belongs to
+    const session = sessions.find(s => s.id === intervention.session_id);
+    if (!session || !session.started_at || !intervention.triggered_at) return;
 
-  if (estimatedMinutes.length === 0) return null;
+    const sessionStart = new Date(session.started_at + 'Z').getTime();
+    const interventionTime = new Date(intervention.triggered_at).getTime();
+    const minutesIn = Math.round((interventionTime - sessionStart) / 60000);
 
+    // Only count reasonable values
+    if (minutesIn > 0 && minutesIn < (session.planned_duration || 120)) {
+      driftMinutes.push(minutesIn);
+    }
+  });
+
+  if (driftMinutes.length === 0) {
+    // Fallback to checkpoint-based estimation
+    const checkpointMinutes: { [key: string]: number } = {
+      'early': 5,
+      'mid': 15,
+      'late': 25,
+    };
+
+    const estimatedMinutes = interventions
+      .map((i) => checkpointMinutes[i.checkpoint] || 10)
+      .filter(Boolean);
+
+    if (estimatedMinutes.length === 0) return null;
+
+    const avgMinute = Math.round(
+      estimatedMinutes.reduce((a, b) => a + b, 0) / estimatedMinutes.length
+    );
+
+    const acceptedCount = interventions.filter((i) => i.user_action === 'accepted').length;
+    const successRate = Math.round((acceptedCount / interventions.length) * 100);
+
+    return { typicalMinute: avgMinute, interventionSuccess: successRate };
+  }
+
+  // Use actual timing data
   const avgMinute = Math.round(
-    estimatedMinutes.reduce((a, b) => a + b, 0) / estimatedMinutes.length
+    driftMinutes.reduce((a, b) => a + b, 0) / driftMinutes.length
   );
 
-  // Use user_action field (accepted/dismissed/ignored) instead of 'accepted' boolean
   const acceptedCount = interventions.filter((i) => i.user_action === 'accepted').length;
   const successRate = Math.round((acceptedCount / interventions.length) * 100);
 
@@ -170,36 +207,48 @@ function calculateDriftPattern(interventions: any[]): FocusFingerprintData['drif
 
 function generateDiscoveries(
   sessions: any[],
-  interventions: any[]
+  interventions: any[],
+  aiPatterns: any[]
 ): FocusFingerprintData['discoveries'] {
   const discoveries: FocusFingerprintData['discoveries'] = [];
 
-  if (sessions.length < 5) return discoveries;
+  if (sessions.length < 3) return discoveries;
 
   // 1. Best day discovery
   const dayStats = calculateDayBreakdown(sessions);
-  const bestDay = dayStats.reduce((best, day) =>
+  const activeDays = dayStats.filter(d => d.sessionCount > 0);
+  const bestDay = activeDays.reduce((best, day) =>
     day.avgScore > best.avgScore ? day : best
-  );
-  const worstDay = dayStats.reduce((worst, day) =>
-    day.avgScore < worst.avgScore && day.sessionCount > 0 ? day : worst
-  );
+  , activeDays[0]);
 
-  if (bestDay.sessionCount >= 2) {
+  if (bestDay && bestDay.sessionCount >= 2) {
     discoveries.push({
       type: 'positive',
       insight: `${bestDay.day}s are your best focus day (${bestDay.avgScore}/100 avg).`,
     });
   }
 
-  if (worstDay.sessionCount >= 2 && worstDay.day !== bestDay.day) {
+  // 2. Task type comparison
+  const taskStats: { [type: string]: { total: number; count: number } } = {};
+  sessions.forEach(s => {
+    if (!taskStats[s.task_type]) taskStats[s.task_type] = { total: 0, count: 0 };
+    taskStats[s.task_type].total += s.focus_quality;
+    taskStats[s.task_type].count++;
+  });
+
+  const taskEntries = Object.entries(taskStats).filter(([_, v]) => v.count >= 2);
+  if (taskEntries.length >= 2) {
+    const sorted = taskEntries.sort((a, b) => (b[1].total / b[1].count) - (a[1].total / a[1].count));
+    const bestTask = sorted[0];
+    const bestTaskAvg = Math.round((bestTask[1].total / bestTask[1].count) * 10);
+    const taskLabel = formatTaskType(bestTask[0]);
     discoveries.push({
-      type: 'neutral',
-      insight: `${worstDay.day}s tend to be harder for you — but you're improving.`,
+      type: 'positive',
+      insight: `${taskLabel} sessions get your highest focus (${bestTaskAvg}/100 across ${bestTask[1].count} sessions).`,
     });
   }
 
-  // 2. Session length insight
+  // 3. Session length insight
   const shortSessions = sessions.filter((s) => s.actual_duration && s.actual_duration < 20);
   const longSessions = sessions.filter((s) => s.actual_duration && s.actual_duration >= 30);
 
@@ -212,18 +261,17 @@ function generateDiscoveries(
     if (shortAvg > longAvg + 1) {
       discoveries.push({
         type: 'positive',
-        insight: 'You focus better in shorter bursts (under 20 min).',
+        insight: `Short sessions (under 20 min) score ${Math.round(shortAvg * 10)}/100 vs ${Math.round(longAvg * 10)}/100 for longer ones.`,
       });
     } else if (longAvg > shortAvg + 1) {
       discoveries.push({
         type: 'positive',
-        insight: 'You hit your stride in longer sessions (30+ min).',
+        insight: `Longer sessions (30+ min) score ${Math.round(longAvg * 10)}/100 — you build momentum over time.`,
       });
     }
   }
 
-  // 3. Intervention effectiveness
-  // FIX: Use user_action field instead of 'accepted' boolean
+  // 4. Intervention effectiveness
   if (interventions.length >= 5) {
     const acceptedInterventions = interventions.filter((i) => i.user_action === 'accepted');
     const acceptRate = (acceptedInterventions.length / interventions.length) * 100;
@@ -231,23 +279,23 @@ function generateDiscoveries(
     if (acceptRate >= 70) {
       discoveries.push({
         type: 'positive',
-        insight: `You respond well to focus nudges (${Math.round(acceptRate)}% acceptance).`,
+        insight: `Focus nudges work well for you — ${Math.round(acceptRate)}% acceptance rate across ${interventions.length} check-ins.`,
       });
     } else if (acceptRate <= 30) {
       discoveries.push({
         type: 'neutral',
-        insight: 'You prefer pushing through without breaks — independent focus style.',
+        insight: `You prefer pushing through without breaks — independent focus style (${Math.round(acceptRate)}% nudge acceptance).`,
       });
     }
   }
 
-  // 4. Morning vs afternoon
+  // 5. Morning vs afternoon
   const morningSessions = sessions.filter((s) => {
-    const hour = new Date(s.started_at).getHours();
+    const hour = new Date(s.started_at + 'Z').getHours();
     return hour >= 6 && hour < 12;
   });
   const afternoonSessions = sessions.filter((s) => {
-    const hour = new Date(s.started_at).getHours();
+    const hour = new Date(s.started_at + 'Z').getHours();
     return hour >= 12 && hour < 18;
   });
 
@@ -256,69 +304,98 @@ function generateDiscoveries(
       morningSessions.reduce((sum, s) => sum + s.focus_quality, 0) / morningSessions.length;
     const afternoonAvg =
       afternoonSessions.reduce((sum, s) => sum + s.focus_quality, 0) / afternoonSessions.length;
+    const diff = Math.round(Math.abs(morningAvg - afternoonAvg) * 10);
 
-    if (morningAvg > afternoonAvg + 1) {
+    if (morningAvg > afternoonAvg + 0.5 && diff > 5) {
       discoveries.push({
         type: 'positive',
-        insight: 'You\'re a morning focuser — schedule important work before noon.',
+        insight: `Morning sessions average ${diff} points higher — you're a morning focuser.`,
       });
-    } else if (afternoonAvg > morningAvg + 1) {
+    } else if (afternoonAvg > morningAvg + 0.5 && diff > 5) {
       discoveries.push({
         type: 'positive',
-        insight: 'Your focus peaks in the afternoon — lean into it.',
-      });
-    }
-  }
-
-  // 5. Recent improvement
-  const recentSessions = sessions.slice(-10);
-  const olderSessions = sessions.slice(0, Math.min(10, sessions.length - 10));
-
-  if (olderSessions.length >= 5 && recentSessions.length >= 5) {
-    const recentAvg =
-      recentSessions.reduce((sum, s) => sum + s.focus_quality, 0) / recentSessions.length;
-    const olderAvg =
-      olderSessions.reduce((sum, s) => sum + s.focus_quality, 0) / olderSessions.length;
-
-    if (recentAvg > olderAvg + 0.5) {
-      discoveries.push({
-        type: 'positive',
-        insight: 'Your focus is trending up — recent sessions are stronger.',
+        insight: `Afternoon sessions average ${diff} points higher — your focus peaks after noon.`,
       });
     }
   }
 
-  return discoveries.slice(0, 5); // Max 5 discoveries
+  // 6. Completion rate insight
+  const completedOnTime = sessions.filter(s => 
+    s.actual_duration && s.planned_duration && 
+    s.actual_duration >= s.planned_duration * 0.8
+  ).length;
+  const completionRate = Math.round((completedOnTime / sessions.length) * 100);
+
+  if (sessions.length >= 5 && completionRate >= 80) {
+    discoveries.push({
+      type: 'positive',
+      insight: `${completionRate}% session completion rate — you finish what you start.`,
+    });
+  } else if (sessions.length >= 5 && completionRate < 50) {
+    discoveries.push({
+      type: 'neutral',
+      insight: `${completionRate}% of sessions reach planned duration — try shorter targets to build consistency.`,
+    });
+  }
+
+  // 7. Add high-confidence AI-discovered patterns
+  if (aiPatterns && aiPatterns.length > 0) {
+    const highConfidence = aiPatterns.filter(p => p.confidence >= 0.6);
+    highConfidence.forEach(pattern => {
+      // Avoid duplicating insights we already computed
+      const isDuplicate = discoveries.some(d => 
+        d.insight.toLowerCase().includes(pattern.insight.toLowerCase().slice(0, 20))
+      );
+      if (!isDuplicate && discoveries.length < 6) {
+        discoveries.push({
+          type: 'positive',
+          insight: pattern.insight,
+        });
+      }
+    });
+  }
+
+  // 8. Recent streak
+  const recentSessions = sessions.slice(-5);
+  if (recentSessions.length >= 5) {
+    const recentAvg = recentSessions.reduce((sum, s) => sum + s.focus_quality, 0) / recentSessions.length;
+    if (recentAvg >= 7) {
+      discoveries.push({
+        type: 'positive',
+        insight: `Last 5 sessions averaged ${Math.round(recentAvg * 10)}/100 — you're on a hot streak.`,
+      });
+    }
+  }
+
+  return discoveries.slice(0, 6); // Max 6 discoveries
 }
 
 function calculateGrowth(sessions: any[]): FocusFingerprintData['growth'] {
-  if (sessions.length < 10) return null;
+  if (sessions.length < 6) return null;
 
-  const firstWeekSessions = sessions.slice(0, Math.min(7, Math.floor(sessions.length / 2)));
-  const recentSessions = sessions.slice(-7);
+  const halfIdx = Math.floor(sessions.length / 2);
+  const firstHalf = sessions.slice(0, halfIdx);
+  const recentHalf = sessions.slice(halfIdx);
 
-  const firstWeekAvg =
-    firstWeekSessions.reduce((sum, s) => sum + s.focus_quality, 0) / firstWeekSessions.length;
+  const firstAvg =
+    firstHalf.reduce((sum, s) => sum + s.focus_quality, 0) / firstHalf.length;
   const recentAvg =
-    recentSessions.reduce((sum, s) => sum + s.focus_quality, 0) / recentSessions.length;
+    recentHalf.reduce((sum, s) => sum + s.focus_quality, 0) / recentHalf.length;
 
-  // Distraction count comparison (if tracked)
-  const firstWeekDrifts =
-    firstWeekSessions.reduce((sum, s) => sum + (s.distraction_count || 0), 0) /
-    firstWeekSessions.length;
+  const firstDrifts =
+    firstHalf.reduce((sum, s) => sum + (s.distraction_count || 0), 0) / firstHalf.length;
   const recentDrifts =
-    recentSessions.reduce((sum, s) => sum + (s.distraction_count || 0), 0) /
-    recentSessions.length;
+    recentHalf.reduce((sum, s) => sum + (s.distraction_count || 0), 0) / recentHalf.length;
 
   const improvement =
-    firstWeekAvg > 0
-      ? Math.round(((recentAvg - firstWeekAvg) / firstWeekAvg) * 100)
+    firstAvg > 0
+      ? Math.round(((recentAvg - firstAvg) / firstAvg) * 100)
       : 0;
 
   return {
-    firstWeekAvg: Math.round(firstWeekAvg * 10),
+    firstWeekAvg: Math.round(firstAvg * 10),
     recentAvg: Math.round(recentAvg * 10),
-    firstWeekDrifts: Math.round(firstWeekDrifts * 10) / 10,
+    firstWeekDrifts: Math.round(firstDrifts * 10) / 10,
     recentDrifts: Math.round(recentDrifts * 10) / 10,
     improvement,
   };
@@ -329,7 +406,7 @@ function calculateDayBreakdown(sessions: any[]): FocusFingerprintData['dayBreakd
   const dayStats: { [day: number]: { total: number; count: number } } = {};
 
   sessions.forEach((s) => {
-    const day = new Date(s.started_at).getDay();
+    const day = new Date(s.started_at + 'Z').getDay();
     if (!dayStats[day]) {
       dayStats[day] = { total: 0, count: 0 };
     }
@@ -350,7 +427,7 @@ function calculateHourBreakdown(sessions: any[]): FocusFingerprintData['hourBrea
   const hourStats: { [hour: number]: { total: number; count: number } } = {};
 
   sessions.forEach((s) => {
-    const hour = new Date(s.started_at).getHours();
+    const hour = new Date(s.started_at + 'Z').getHours();
     if (!hourStats[hour]) {
       hourStats[hour] = { total: 0, count: 0 };
     }
@@ -358,7 +435,6 @@ function calculateHourBreakdown(sessions: any[]): FocusFingerprintData['hourBrea
     hourStats[hour].count++;
   });
 
-  // Return hours 6am to 11pm
   return Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => ({
     hour,
     avgScore: hourStats[hour]
@@ -366,4 +442,15 @@ function calculateHourBreakdown(sessions: any[]): FocusFingerprintData['hourBrea
       : 0,
     sessionCount: hourStats[hour]?.count || 0,
   }));
+}
+
+function formatTaskType(type: string): string {
+  const map: Record<string, string> = {
+    coding: 'Coding',
+    writing: 'Writing',
+    reading: 'Reading',
+    design: 'Design',
+    studying: 'Studying',
+  };
+  return map[type] || type.charAt(0).toUpperCase() + type.slice(1);
 }
