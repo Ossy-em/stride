@@ -14,6 +14,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
     }
 
+    // First check if session is currently paused — don't show interventions while paused
+    const { data: session } = await supabaseAdmin
+      .from('sessions')
+      .select('paused_at')
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (session?.paused_at) {
+      return NextResponse.json({ pending: false });
+    }
+
     // Find interventions that were sent but not responded to
     const { data: pending, error } = await supabaseAdmin
       .from('interventions')
