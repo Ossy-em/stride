@@ -29,12 +29,13 @@ export const metadata: Metadata = {
     type: 'website',
   },
 
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Stride',
-    description: 'Predicts distraction. Protects your focus.',
-    images: ['/og.png'],
-  },
+ twitter: {
+  card: 'summary_large_image',
+  title: 'Stride',
+  description: 'Predicts distraction. Protects your focus.',
+  images: ['/og-v2.png'], // updated
+},
+
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
