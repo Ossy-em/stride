@@ -39,7 +39,8 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/dashboard');
+     const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);
+const res = await fetch(`/api/dashboard?tz=${tz}`);
 
       if (!res.ok) {
         throw new Error('Failed to fetch dashboard data');
@@ -70,9 +71,11 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-lime-100 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-[#1a3a2f] animate-pulse" />
-          </div>
+          <img 
+            src="/icons/icon.png" 
+            alt="Stride" 
+            className="w-24 h-24 animate-pulse"
+          />
           <p className="text-gray-500 font-medium">Loading...</p>
         </div>
       </div>
@@ -114,10 +117,12 @@ export default function DashboardPage() {
       <header className="bg-white border-b border-gray-100">
         <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <a href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-lime-400 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-[#1a3a2f]" strokeWidth={2.5} />
-            </div>
-            <span className="text-lg font-bold text-gray-900">Stride</span>
+            <img 
+              src="/icons/stride-light.png" 
+              alt="Stride" 
+              className=" h-16"
+            />
+            {/* <span className="text-lg font-bold text-gray-900">Stride</span> */}
           </a>
         </div>
       </header>
