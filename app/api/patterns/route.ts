@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
+import { getUserPlan } from '@/lib/plans'; // *** NEW ***
 import type { FocusFingerprintData } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -10,6 +11,9 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // *** NEW: Check user plan ***
+    const plan = await getUserPlan(user.id);
 
     // Fetch all user sessions
     const { data: sessions, error: sessionsError } = await supabaseAdmin
@@ -29,7 +33,32 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch interventions for drift pattern analysis
+    // *** NEW: Free users get teaser, not full data ***
+    if (plan !== 'premium') {
+      // Give them just enough to see value, then lock the rest
+      const growth = calculateGrowth(sessions);
+      const dayBreakdown = calculateDayBreakdown(sessions);
+
+      return NextResponse.json({
+        plan: 'free',
+        upgrade_required: true,
+        // Teaser data - just growth and day breakdown
+        teaser: {
+          totalSessions: sessions.length,
+          growth,
+          dayBreakdown,
+          // Blurred/locked sections hint at what premium offers
+          locked_features: [
+            'Peak Hours analysis',
+            'Drift Pattern detection',
+            'AI-powered Discoveries',
+            'Hourly Focus breakdown',
+          ],
+        },
+      });
+    }
+
+    // *** PREMIUM USERS: Full data (unchanged from before) ***
     const sessionIds = sessions.map(s => s.id);
     
     const { data: interventions, error: interventionsError } = await supabaseAdmin
@@ -42,7 +71,6 @@ export async function GET(request: NextRequest) {
       console.error('Failed to fetch interventions:', interventionsError);
     }
 
-    // Fetch AI-generated patterns for enriching discoveries
     const { data: aiPatterns } = await supabaseAdmin
       .from('patterns')
       .select('pattern_type, insight, confidence')
@@ -50,22 +78,11 @@ export async function GET(request: NextRequest) {
       .order('detected_at', { ascending: false })
       .limit(10);
 
-    // PEAK HOURS ANALYSIS
     const peakHours = calculatePeakHours(sessions);
-
-    // DRIFT PATTERN ANALYSIS
     const driftPattern = calculateDriftPattern(sessions, interventions || []);
-
-    // DISCOVERIES
     const discoveries = generateDiscoveries(sessions, interventions || [], aiPatterns || []);
-
-    // GROWTH ANALYSIS
     const growth = calculateGrowth(sessions);
-
-    // DAY BREAKDOWN
     const dayBreakdown = calculateDayBreakdown(sessions);
-
-    // HOUR BREAKDOWN
     const hourBreakdown = calculateHourBreakdown(sessions);
 
     const fingerprintData: FocusFingerprintData = {
@@ -89,7 +106,7 @@ export async function GET(request: NextRequest) {
 
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS (unchanged)
 // ============================================
 
 function calculatePeakHours(sessions: any[]): FocusFingerprintData['peakHours'] {
@@ -106,7 +123,6 @@ function calculatePeakHours(sessions: any[]): FocusFingerprintData['peakHours'] 
     hourlyStats[hour].count++;
   });
 
-  // Find best 2-hour window
   let bestWindow = { start: 9, end: 11, avg: 0, count: 0 };
 
   for (let start = 6; start <= 20; start++) {
@@ -149,11 +165,9 @@ function calculateDriftPattern(
 ): FocusFingerprintData['driftPattern'] {
   if (interventions.length < 3) return null;
 
-  // Calculate actual drift minutes from session data and intervention timing
   const driftMinutes: number[] = [];
 
   interventions.forEach((intervention) => {
-    // Find the session this intervention belongs to
     const session = sessions.find(s => s.id === intervention.session_id);
     if (!session || !session.started_at || !intervention.triggered_at) return;
 
@@ -161,14 +175,12 @@ function calculateDriftPattern(
     const interventionTime = new Date(intervention.triggered_at).getTime();
     const minutesIn = Math.round((interventionTime - sessionStart) / 60000);
 
-    // Only count reasonable values
     if (minutesIn > 0 && minutesIn < (session.planned_duration || 120)) {
       driftMinutes.push(minutesIn);
     }
   });
 
   if (driftMinutes.length === 0) {
-    // Fallback to checkpoint-based estimation
     const checkpointMinutes: { [key: string]: number } = {
       'early': 5,
       'mid': 15,
@@ -191,7 +203,6 @@ function calculateDriftPattern(
     return { typicalMinute: avgMinute, interventionSuccess: successRate };
   }
 
-  // Use actual timing data
   const avgMinute = Math.round(
     driftMinutes.reduce((a, b) => a + b, 0) / driftMinutes.length
   );
@@ -214,7 +225,6 @@ function generateDiscoveries(
 
   if (sessions.length < 3) return discoveries;
 
-  // 1. Best day discovery
   const dayStats = calculateDayBreakdown(sessions);
   const activeDays = dayStats.filter(d => d.sessionCount > 0);
   const bestDay = activeDays.reduce((best, day) =>
@@ -228,7 +238,6 @@ function generateDiscoveries(
     });
   }
 
-  // 2. Task type comparison
   const taskStats: { [type: string]: { total: number; count: number } } = {};
   sessions.forEach(s => {
     if (!taskStats[s.task_type]) taskStats[s.task_type] = { total: 0, count: 0 };
@@ -248,7 +257,6 @@ function generateDiscoveries(
     });
   }
 
-  // 3. Session length insight
   const shortSessions = sessions.filter((s) => s.actual_duration && s.actual_duration < 20);
   const longSessions = sessions.filter((s) => s.actual_duration && s.actual_duration >= 30);
 
@@ -271,7 +279,6 @@ function generateDiscoveries(
     }
   }
 
-  // 4. Intervention effectiveness
   if (interventions.length >= 5) {
     const acceptedInterventions = interventions.filter((i) => i.user_action === 'accepted');
     const acceptRate = (acceptedInterventions.length / interventions.length) * 100;
@@ -289,7 +296,6 @@ function generateDiscoveries(
     }
   }
 
-  // 5. Morning vs afternoon
   const morningSessions = sessions.filter((s) => {
     const hour = new Date(s.started_at + 'Z').getHours();
     return hour >= 6 && hour < 12;
@@ -319,7 +325,6 @@ function generateDiscoveries(
     }
   }
 
-  // 6. Completion rate insight
   const completedOnTime = sessions.filter(s => 
     s.actual_duration && s.planned_duration && 
     s.actual_duration >= s.planned_duration * 0.8
@@ -338,11 +343,9 @@ function generateDiscoveries(
     });
   }
 
-  // 7. Add high-confidence AI-discovered patterns
   if (aiPatterns && aiPatterns.length > 0) {
     const highConfidence = aiPatterns.filter(p => p.confidence >= 0.6);
     highConfidence.forEach(pattern => {
-      // Avoid duplicating insights we already computed
       const isDuplicate = discoveries.some(d => 
         d.insight.toLowerCase().includes(pattern.insight.toLowerCase().slice(0, 20))
       );
@@ -355,7 +358,6 @@ function generateDiscoveries(
     });
   }
 
-  // 8. Recent streak
   const recentSessions = sessions.slice(-5);
   if (recentSessions.length >= 5) {
     const recentAvg = recentSessions.reduce((sum, s) => sum + s.focus_quality, 0) / recentSessions.length;
@@ -367,7 +369,7 @@ function generateDiscoveries(
     }
   }
 
-  return discoveries.slice(0, 6); // Max 6 discoveries
+  return discoveries.slice(0, 6);
 }
 
 function calculateGrowth(sessions: any[]): FocusFingerprintData['growth'] {
