@@ -81,7 +81,6 @@ export async function analyzeUserPatterns(
       }
     );
     
-    // Try to parse, handling potential markdown wrapping
     let jsonStr = response;
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -116,6 +115,7 @@ export async function analyzeUserPatterns(
 }
 
 // INTERVENTION GENERATION
+// *** CHANGED: Added `model?` as 4th parameter ***
 export async function generateIntervention(
   context: {
     taskDescription: string;
@@ -141,7 +141,8 @@ export async function generateIntervention(
     variant?: MessageVariant;
   },
   userId: string,
-  sessionId: string
+  sessionId: string,
+  model?: string // *** NEW: optional model override based on user plan ***
 ): Promise<{
   message: string;
   strategy: 'push_through' | 'check_in' | 'take_break';
@@ -165,10 +166,11 @@ export async function generateIntervention(
       prompt = applyVariantStyle(prompt, context.variant);
     }
     
+    // *** CHANGED: Uses model parameter, falls back to haiku ***
     const response = await callClaude(
       prompt,
       undefined,
-      'claude-3-haiku-20240307',
+      model || 'claude-3-haiku-20240307',
       {
         callType: 'intervention_generation',
         userId,
@@ -182,7 +184,6 @@ export async function generateIntervention(
       }
     );
     
-    // Parse response, handling potential markdown wrapping
     let jsonStr = response;
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -191,7 +192,6 @@ export async function generateIntervention(
     
     const parsed = interventionResponseSchema.parse(JSON.parse(jsonStr));
     
-    // Validate no hallucinated time values
     const timeNumbers = parsed.message.match(/\d+/g)?.map(Number) || [];
     const hasInvalidTime = timeNumbers.some(n => n > context.plannedDuration && n > 60);
     
