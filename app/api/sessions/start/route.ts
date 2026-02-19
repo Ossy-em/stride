@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
+import { canStartSession, getUserPlan, isDurationAllowed } from '@/lib/plans';
 
 const startSessionSchema = z.object({
   taskDescription: z.string().min(1),
   taskType: z.enum(['coding', 'writing', 'reading']),
   plannedDuration: z.number().min(1),
+  timezone: z.string().optional(), // *** NEW: timezone from client ***
 });
 
 export async function POST(request: NextRequest) {
@@ -20,25 +22,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ENSURE USER EXISTS IN YOUR USERS TABLE (PRODUCTION-SAFE VERSION)
-    const { data: existingUser } = await supabase
+    // Parse body first so we can get timezone
+    const body = await request.json();
+    const { taskDescription, taskType, plannedDuration, timezone } = startSessionSchema.parse(body);
+
+    // *** Check session limit with timezone ***
+    const sessionCheck = await canStartSession(user.id, timezone);
+    if (!sessionCheck.allowed) {
+      return NextResponse.json({
+        error: sessionCheck.reason,
+        upgrade: true,
+        sessionsToday: sessionCheck.sessionsToday,
+        limit: sessionCheck.limit,
+      }, { status: 403 });
+    }
+
+    // *** Check duration limit ***
+    const plan = await getUserPlan(user.id);
+    const durationCheck = isDurationAllowed(plan, plannedDuration);
+    if (!durationCheck.allowed) {
+      return NextResponse.json({
+        error: durationCheck.reason,
+        upgrade: true,
+        maxAllowed: durationCheck.maxAllowed,
+      }, { status: 403 });
+    }
+
+    // ENSURE USER EXISTS IN YOUR USERS TABLE
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', user.email)
       .maybeSingle();
 
     if (existingUser && existingUser.id !== user.id) {
-      // ID mismatch - delete old user and create new one with correct ID
       console.log(`⚠️ User ID mismatch for ${user.email}. Migrating to new ID...`);
       
-      // Delete old user (cascade deletes sessions, interventions, etc.)
-      await supabase
+      await supabaseAdmin
         .from('users')
         .delete()
         .eq('email', user.email);
       
-      // Insert new user with NextAuth's ID
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('users')
         .insert({
           id: user.id,
@@ -57,8 +82,7 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ User ${user.email} migrated to new ID`);
     } else if (!existingUser) {
-      // User doesn't exist - create them
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('users')
         .insert({
           id: user.id,
@@ -77,8 +101,7 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ New user ${user.email} created`);
     } else {
-      // User exists with correct ID - update metadata
-      await supabase
+      await supabaseAdmin
         .from('users')
         .update({
           name: user.name,
@@ -89,11 +112,8 @@ export async function POST(request: NextRequest) {
       console.log(`✅ User ${user.email} synced`);
     }
 
-    // NOW CREATE THE SESSION
-    const body = await request.json();
-    const { taskDescription, taskType, plannedDuration } = startSessionSchema.parse(body);
-
-    const { data: session, error } = await supabase
+    // CREATE THE SESSION
+    const { data: session, error } = await supabaseAdmin
       .from('sessions')
       .insert({
         user_id: user.id,
