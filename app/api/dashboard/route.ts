@@ -5,6 +5,133 @@ import { evaluateInsightQuality } from '@/lib/evaluators';
 import { logEvaluation } from '@/lib/opik';
 import { getCurrentUser } from '@/lib/auth';
 
+/**
+ * Get the current hour in the user's timezone.
+ * Falls back to UTC if no timezone provided.
+ */
+function getHourInTimezone(timezone?: string): number {
+  const now = new Date();
+  if (timezone) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        hour12: false,
+      });
+      return parseInt(formatter.format(now));
+    } catch (e) {
+      // Invalid timezone, fall through to UTC
+    }
+  }
+  return now.getUTCHours();
+}
+
+/**
+ * Get the start of a day (midnight) in the user's timezone, returned as UTC Date.
+ * daysAgo: 0 = today, 1 = yesterday, 7 = a week ago, etc.
+ */
+function getStartOfDayInTimezone(daysAgo: number, timezone?: string): Date {
+  const now = new Date();
+
+  if (timezone) {
+    try {
+      // Get today's date in the user's timezone
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const dateStr = formatter.format(now); // "2026-02-17"
+      const [year, month, day] = dateStr.split('-').map(Number);
+
+      // Create the target date (today minus daysAgo)
+      const targetDate = new Date(Date.UTC(year, month - 1, day));
+      targetDate.setUTCDate(targetDate.getUTCDate() - daysAgo);
+
+      // We need to find what UTC time = midnight of targetDate in the user's timezone.
+      // Strategy: start at UTC midnight of that date, check what local time that is,
+      // then adjust.
+      const guessUTC = new Date(Date.UTC(
+        targetDate.getUTCFullYear(),
+        targetDate.getUTCMonth(),
+        targetDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
+
+      const localParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).formatToParts(guessUTC);
+
+      const localHour = parseInt(localParts.find(p => p.type === 'hour')?.value || '0');
+      const localMinute = parseInt(localParts.find(p => p.type === 'minute')?.value || '0');
+      const localDay = parseInt(localParts.find(p => p.type === 'day')?.value || '0');
+      const targetDay = targetDate.getUTCDate();
+
+      // Calculate offset: at UTC midnight, local time is localHour:localMinute
+      let offsetMinutes: number;
+
+      if (localDay === targetDay) {
+        // Same day means timezone is ahead of UTC (positive offset)
+        // e.g., UTC midnight = local 5:30 AM means UTC+5:30
+        // Local midnight = UTC - 5:30 = previous day 18:30 UTC
+        offsetMinutes = localHour * 60 + localMinute;
+      } else if (localDay < targetDay || (targetDay === 1 && localDay >= 28)) {
+        // Previous day means timezone is behind UTC (negative offset)
+        // e.g., UTC midnight = local 7:00 PM previous day means UTC-5
+        // Local midnight = UTC + 5:00
+        offsetMinutes = -((24 - localHour) * 60 - localMinute);
+      } else {
+        // Next day means timezone is way ahead
+        offsetMinutes = (localHour + 24) * 60 + localMinute;
+      }
+
+      // Local midnight in UTC = UTC midnight - offset
+      return new Date(guessUTC.getTime() - offsetMinutes * 60 * 1000);
+    } catch (e) {
+      console.error('Timezone error, falling back to UTC:', e);
+    }
+  }
+
+  // Fallback: UTC
+  const result = new Date(now);
+  result.setUTCHours(0, 0, 0, 0);
+  result.setUTCDate(result.getUTCDate() - daysAgo);
+  return result;
+}
+
+/**
+ * Get a date string (YYYY-M-D) for a given Date in the user's timezone.
+ * Used for streak calculation.
+ */
+function getDateStringInTimezone(date: Date, timezone?: string): string {
+  if (timezone) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      }).formatToParts(date);
+
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1;
+      const day = parts.find(p => p.type === 'day')?.value;
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      // Fall through
+    }
+  }
+  return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
+}
+
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -12,19 +139,16 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    // TIME BOUNDARIES
-    const now = new Date();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
 
-    const yesterdayStart = new Date(todayStart);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    // *** Get timezone from query param ***
+    const timezone = request.nextUrl.searchParams.get('tz') || undefined;
 
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(weekStart.getDate() - 7);
+    // TIME BOUNDARIES (now timezone-aware)
+    const todayStart = getStartOfDayInTimezone(0, timezone);
+    const yesterdayStart = getStartOfDayInTimezone(1, timezone);
+    const weekStart = getStartOfDayInTimezone(7, timezone);
+    const twoWeeksStart = getStartOfDayInTimezone(14, timezone);
 
-    const twoWeeksStart = new Date(todayStart);
-    twoWeeksStart.setDate(twoWeeksStart.getDate() - 14);
     // FETCH ALL RELEVANT SESSIONS
     const { data: allSessions, error: sessionsError } = await supabase
       .from('sessions')
@@ -36,9 +160,7 @@ export async function GET(request: NextRequest) {
 
     const sessions = allSessions || [];
 
-    // ============================================
-    // BASIC STATS
-    // ============================================
+    // BASIC STATS (using timezone-aware boundaries)
     const todaySessions = sessions.filter(
       (s) => new Date(s.started_at) >= todayStart && s.focus_quality !== null
     );
@@ -60,14 +182,17 @@ export async function GET(request: NextRequest) {
         new Date(s.started_at) < weekStart &&
         s.focus_quality !== null
     );
-    // STREAK CALCULATION
-    const streak = calculateStreak(sessions);
+
+    // STREAK CALCULATION (timezone-aware)
+    const streak = calculateStreak(sessions, timezone);
+
     // TOTAL STATS
     const totalSessions = sessions.filter((s) => s.focus_quality !== null).length;
     const totalFocusMinutes = sessions.reduce(
       (sum, s) => sum + (s.actual_duration || 0),
       0
     );
+
     // TODAY'S SCORE
     const todayScore =
       todaySessions.length > 0
@@ -76,13 +201,14 @@ export async function GET(request: NextRequest) {
               todaySessions.length) *
               10
           )
-        : null; // null = no sessions today yet
+        : null;
 
     const todayFocusMinutes = todaySessions.reduce(
       (sum, s) => sum + (s.actual_duration || 0),
       0
     );
-    // YESTERDAY'S STATS (for comparison)
+
+    // YESTERDAY'S STATS
     const yesterdayScore =
       yesterdaySessions.length > 0
         ? Math.round(
@@ -96,6 +222,7 @@ export async function GET(request: NextRequest) {
       (sum, s) => sum + (s.actual_duration || 0),
       0
     );
+
     // WEEKLY COMPARISON
     const thisWeekAvg =
       thisWeekSessions.length > 0
@@ -111,10 +238,13 @@ export async function GET(request: NextRequest) {
 
     const weeklyTrend =
       lastWeekAvg > 0 ? Math.round(((thisWeekAvg - lastWeekAvg) / lastWeekAvg) * 100) : 0;
-    // PEAK HOURS ANALYSIS
-    const peakHours = calculatePeakHours(sessions);
-    // BEST DAY OF WEEK
-    const bestDay = calculateBestDay(sessions);
+
+    // PEAK HOURS ANALYSIS (timezone-aware)
+    const peakHours = calculatePeakHours(sessions, timezone);
+
+    // BEST DAY OF WEEK (timezone-aware)
+    const bestDay = calculateBestDay(sessions, timezone);
+
     // AVERAGE SESSION LENGTH
     const completedSessions = sessions.filter((s) => s.actual_duration);
     const avgSessionMinutes =
@@ -123,13 +253,12 @@ export async function GET(request: NextRequest) {
             completedSessions.reduce((sum, s) => sum + s.actual_duration, 0) /
               completedSessions.length
           )
-        : 25; // default suggestion
+        : 25;
+
     // SUGGESTED SESSION LENGTH
-    // Based on their most successful session lengths
     const suggestedDuration = calculateSuggestedDuration(sessions);
 
     // PERSONAL BEST
-
     const longestSession = Math.max(
       ...sessions.map((s) => s.actual_duration || 0),
       0
@@ -139,11 +268,11 @@ export async function GET(request: NextRequest) {
       0
     );
 
-    // ============================================
-    // GREETING CONTEXT
-    // ============================================
+    // GREETING CONTEXT (timezone-aware hour)
+    const userHour = getHourInTimezone(timezone);
+
     const greetingContext = generateGreetingContext({
-      hour: now.getHours(),
+      hour: userHour,
       todaySessions,
       yesterdaySessions,
       thisWeekSessions,
@@ -152,9 +281,7 @@ export async function GET(request: NextRequest) {
       totalSessions,
     });
 
-    // ============================================
-    // AI INSIGHTS (existing logic)
-    // ============================================
+    // AI INSIGHTS
     const recentSessions = sessions.slice(0, 20).filter((s) => s.focus_quality !== null);
 
     const insights =
@@ -162,7 +289,6 @@ export async function GET(request: NextRequest) {
         ? await generateDashboardInsights(recentSessions, user.id)
         : [];
 
-    // Log evaluation if we have enough data
     if (recentSessions.length >= 3 && insights.length > 0) {
       const qualityScore = await evaluateInsightQuality(insights, recentSessions);
       await logEvaluation({
@@ -178,67 +304,46 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ============================================
     // RESPONSE
-    // ============================================
     return NextResponse.json({
-      // User info
       user: {
         firstName: user.name?.split(' ')[0] || null,
       },
-
-      // Greeting & context
       greeting: greetingContext,
-
-      // Today
       today: {
         score: todayScore,
         sessions: todaySessions.length,
         focusMinutes: todayFocusMinutes,
       },
-
-      // Yesterday (for comparison copy)
       yesterday: {
         score: yesterdayScore,
         sessions: yesterdaySessions.length,
         focusMinutes: yesterdayFocusMinutes,
       },
-
-      // Streak
       streak: {
         current: streak.current,
         longest: streak.longest,
-        isAtRisk: streak.isAtRisk, // No session today yet
+        isAtRisk: streak.isAtRisk,
       },
-
-      // Weekly
       week: {
         sessions: thisWeekSessions.length,
         avgScore: Math.round(thisWeekAvg * 10),
         trend: weeklyTrend,
         focusMinutes: thisWeekSessions.reduce((sum, s) => sum + (s.actual_duration || 0), 0),
       },
-
-      // Patterns (for Focus Fingerprint teaser)
       patterns: {
         peakHours,
         bestDay,
         avgSessionMinutes,
         suggestedDuration,
       },
-
-      // Personal bests
       records: {
         longestSession,
         highestFocusScore,
         totalSessions,
         totalFocusMinutes,
       },
-
-      // AI Insights
       insights,
-
-      // Is this a new user?
       isNewUser: totalSessions < 3,
     });
   } catch (error) {
@@ -250,11 +355,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ============================================
 // HELPER FUNCTIONS
-// ============================================
 
-function calculateStreak(sessions: any[]): {
+function calculateStreak(
+  sessions: any[],
+  timezone?: string
+): {
   current: number;
   longest: number;
   isAtRisk: boolean;
@@ -263,21 +369,17 @@ function calculateStreak(sessions: any[]): {
     return { current: 0, longest: 0, isAtRisk: false };
   }
 
-  // Get unique dates with sessions
+  // Get unique dates with sessions, using user's timezone
   const sessionDates = new Set(
     sessions
       .filter((s) => s.focus_quality !== null)
-      .map((s) => {
-        const d = new Date(s.started_at);
-        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      })
+      .map((s) => getDateStringInTimezone(new Date(s.started_at), timezone))
   );
 
   const sortedDates = Array.from(sessionDates).sort().reverse();
 
-  // Check if there's a session today
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  // Check if there's a session today (in user's timezone)
+  const todayStr = getDateStringInTimezone(new Date(), timezone);
   const hasSessionToday = sessionDates.has(todayStr);
 
   // Calculate current streak
@@ -290,7 +392,7 @@ function calculateStreak(sessions: any[]): {
   }
 
   while (true) {
-    const dateStr = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
+    const dateStr = getDateStringInTimezone(checkDate, timezone);
     if (sessionDates.has(dateStr)) {
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);
@@ -332,7 +434,10 @@ function calculateStreak(sessions: any[]): {
   };
 }
 
-function calculatePeakHours(sessions: any[]): {
+function calculatePeakHours(
+  sessions: any[],
+  timezone?: string
+): {
   start: number;
   end: number;
   improvement: number;
@@ -340,11 +445,26 @@ function calculatePeakHours(sessions: any[]): {
   const validSessions = sessions.filter((s) => s.focus_quality !== null);
   if (validSessions.length < 5) return null;
 
-  // Group by hour
   const hourlyStats: { [hour: number]: { total: number; count: number } } = {};
 
   validSessions.forEach((s) => {
-    const hour = new Date(s.started_at).getHours();
+    // Get the hour in the user's timezone
+    let hour: number;
+    if (timezone) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          hour: 'numeric',
+          hour12: false,
+        });
+        hour = parseInt(formatter.format(new Date(s.started_at)));
+      } catch {
+        hour = new Date(s.started_at).getUTCHours();
+      }
+    } else {
+      hour = new Date(s.started_at).getUTCHours();
+    }
+
     if (!hourlyStats[hour]) {
       hourlyStats[hour] = { total: 0, count: 0 };
     }
@@ -352,7 +472,6 @@ function calculatePeakHours(sessions: any[]): {
     hourlyStats[hour].count++;
   });
 
-  // Find best 2-hour window
   let bestWindow = { start: 9, end: 11, avg: 0 };
 
   for (let start = 6; start <= 20; start++) {
@@ -373,7 +492,6 @@ function calculatePeakHours(sessions: any[]): {
     }
   }
 
-  // Calculate overall average for comparison
   const overallAvg =
     validSessions.reduce((sum, s) => sum + s.focus_quality, 0) / validSessions.length;
 
@@ -389,7 +507,10 @@ function calculatePeakHours(sessions: any[]): {
   };
 }
 
-function calculateBestDay(sessions: any[]): {
+function calculateBestDay(
+  sessions: any[],
+  timezone?: string
+): {
   day: string;
   avgScore: number;
 } | null {
@@ -400,7 +521,26 @@ function calculateBestDay(sessions: any[]): {
   const dayStats: { [day: number]: { total: number; count: number } } = {};
 
   validSessions.forEach((s) => {
-    const day = new Date(s.started_at).getDay();
+    // Get the day in the user's timezone
+    let day: number;
+    if (timezone) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          weekday: 'short',
+        });
+        const weekday = formatter.format(new Date(s.started_at));
+        const dayMap: Record<string, number> = {
+          Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+        };
+        day = dayMap[weekday] ?? new Date(s.started_at).getUTCDay();
+      } catch {
+        day = new Date(s.started_at).getUTCDay();
+      }
+    } else {
+      day = new Date(s.started_at).getUTCDay();
+    }
+
     if (!dayStats[day]) {
       dayStats[day] = { total: 0, count: 0 };
     }
@@ -424,18 +564,16 @@ function calculateBestDay(sessions: any[]): {
 }
 
 function calculateSuggestedDuration(sessions: any[]): number {
-  // Find the duration range where users have highest focus scores
   const validSessions = sessions.filter(
     (s) => s.focus_quality !== null && s.actual_duration
   );
 
-  if (validSessions.length < 5) return 25; // Default
+  if (validSessions.length < 5) return 25;
 
-  // Group into duration buckets
   const buckets: { [key: string]: { scores: number[]; durations: number[] } } = {
-    short: { scores: [], durations: [] }, // < 20 min
-    medium: { scores: [], durations: [] }, // 20-35 min
-    long: { scores: [], durations: [] }, // > 35 min
+    short: { scores: [], durations: [] },
+    medium: { scores: [], durations: [] },
+    long: { scores: [], durations: [] },
   };
 
   validSessions.forEach((s) => {
@@ -452,7 +590,6 @@ function calculateSuggestedDuration(sessions: any[]): number {
     }
   });
 
-  // Find bucket with highest average score (min 2 sessions)
   let bestBucket = 'medium';
   let bestAvg = 0;
 
@@ -466,7 +603,6 @@ function calculateSuggestedDuration(sessions: any[]): number {
     }
   });
 
-  // Return suggested duration based on best bucket
   switch (bestBucket) {
     case 'short':
       return 15;
@@ -494,21 +630,20 @@ function generateGreetingContext(data: {
 } {
   const { hour, todaySessions, yesterdaySessions, streak, peakHours, totalSessions } = data;
 
-  // Time of day
+  // Time of day (now using the user's local hour)
   let timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
   if (hour >= 5 && hour < 12) timeOfDay = 'morning';
   else if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
   else if (hour >= 17 && hour < 21) timeOfDay = 'evening';
   else timeOfDay = 'night';
 
-  // Generate contextual message
   let message: string;
   let subMessage: string | null = null;
 
   // New user
   if (totalSessions === 0) {
     message = "Welcome to Stride. Let's try your first focus session.";
-    subMessage = "No pressure — just see what happens.";
+    subMessage = "No pressure - just see what happens.";
     return { timeOfDay, message, subMessage };
   }
 
@@ -533,7 +668,6 @@ function generateGreetingContext(data: {
     );
     message = `Yesterday you focused for ${yesterdayMinutes} minutes.`;
 
-    // Check if in peak hours
     if (peakHours && hour >= peakHours.start && hour < peakHours.end) {
       subMessage = `It's your peak focus time right now.`;
     } else if (streak.isAtRisk) {
@@ -546,6 +680,6 @@ function generateGreetingContext(data: {
 
   // No recent sessions
   message = "It's been a while. Let's ease back in.";
-  subMessage = "Start with a short session — 15 minutes?";
+  subMessage = "Start with a short session - 15 minutes?";
   return { timeOfDay, message, subMessage };
 }
