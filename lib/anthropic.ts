@@ -11,11 +11,11 @@ export const anthropic = new Anthropic({
   apiKey,
 });
 
-
+// *** CHANGED: model type is now `string` to support plan-based model selection ***
 export async function callClaude(
   prompt: string,
   systemPrompt?: string,
-  model: 'claude-3-5-sonnet-20241022' | 'claude-3-haiku-20240307' = 'claude-3-haiku-20240307',
+  model: string = 'claude-3-haiku-20240307',
   metadata?: Record<string, any> 
 ) {
   const startTime = Date.now();
@@ -35,10 +35,8 @@ export async function callClaude(
 
     const endTime = Date.now();
 
-
     const textContent = response.content.find(block => block.type === 'text');
     const output = textContent?.type === 'text' ? textContent.text : '';
-
 
     await logAICall({
       name: metadata?.callType || 'claude_api_call',
@@ -65,7 +63,6 @@ export async function callClaude(
     return output;
   } catch (error) {
     const endTime = Date.now();
-
 
     await logAICall({
       name: metadata?.callType || 'claude_api_call_failed',
