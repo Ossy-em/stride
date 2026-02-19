@@ -3,22 +3,24 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { checkInterventionNeeded } from '@/lib/prediction-service';
 import { generateIntervention } from '@/lib/ai-service';
 import { sendPushNotification } from '@/lib/push-service';
+import { getLimitsByPlan } from '@/lib/plans';
 
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized access
- const secret = request.nextUrl.searchParams.get('secret');
-if (secret !== process.env.CRON_SECRET) {
+  const secret = request.nextUrl.searchParams.get('secret');
+  if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    // Find all active sessions (started but not ended)
+    // Find all active sessions (started but not ended, and NOT paused)
     const { data: activeSessions, error: sessionsError } = await supabaseAdmin
       .from('sessions')
-      .select('*, users!inner(email)')
+      .select('*, users!inner(email, plan)')
       .is('ended_at', null)
+      .is('paused_at', null) // *** Skip paused sessions ***
       .not('started_at', 'is', null);
 
     if (sessionsError) {
@@ -36,24 +38,27 @@ if (secret !== process.env.CRON_SECRET) {
 
     for (const session of activeSessions) {
       try {
-        // Calculate elapsed minutes
+        // Calculate elapsed minutes (accounting for paused time)
         const startedAt = new Date(session.started_at).getTime();
-        const elapsedMs = Date.now() - startedAt;
+        const totalPausedMs = session.total_paused_ms || 0;
+        const elapsedMs = Date.now() - startedAt - totalPausedMs;
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
 
         // Skip if session just started or is way past planned duration
         if (elapsedMinutes < 1) continue;
-        // Re-check session hasn't ended since our initial query
-const { data: freshSession } = await supabaseAdmin
-  .from('sessions')
-  .select('ended_at')
-  .eq('id', session.id)
-  .single();
 
-if (freshSession?.ended_at) {
-  console.log(`⏭️ Session ${session.id} already ended, skipping`);
-  continue;
-}
+        // Freshness check BEFORE generating - make sure session hasn't ended or been paused
+        const { data: freshSession } = await supabaseAdmin
+          .from('sessions')
+          .select('ended_at, paused_at')
+          .eq('id', session.id)
+          .single();
+
+        if (freshSession?.ended_at || freshSession?.paused_at) {
+          console.log(`⏭️ Session ${session.id} ended or paused, skipping`);
+          continue;
+        }
+
         if (elapsedMinutes > session.planned_duration * 2) {
           console.log(`⏭️ Session ${session.id} is way past duration, skipping`);
           continue;
@@ -133,6 +138,10 @@ if (freshSession?.ended_at) {
           patterns: patterns?.map(p => p.insight) || [],
         };
 
+        // *** Get AI model based on user plan ***
+        const userPlan = (session.users?.plan as 'free' | 'premium') || 'free';
+        const limits = getLimitsByPlan(userPlan);
+
         // Generate intervention
         const intervention = await generateIntervention(
           {
@@ -145,8 +154,22 @@ if (freshSession?.ended_at) {
             variant: prediction.variant?.variantType,
           },
           session.user_id,
-          session.id
+          session.id,
+          limits.interventionModel // *** Use plan-specific model ***
         );
+
+        // *** Freshness check AFTER generating ***
+        // AI call takes seconds — user may have paused or ended during that time
+        const { data: postGenCheck } = await supabaseAdmin
+          .from('sessions')
+          .select('ended_at, paused_at')
+          .eq('id', session.id)
+          .single();
+
+        if (postGenCheck?.ended_at || postGenCheck?.paused_at) {
+          console.log(`⏭️ Session ${session.id} ended or paused during generation, discarding`);
+          continue;
+        }
 
         // Save to DB
         const { data: savedIntervention, error: saveError } = await supabaseAdmin
