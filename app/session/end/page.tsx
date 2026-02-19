@@ -43,16 +43,28 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
     redirect('/dashboard');
   }
 
-  // Mark session as ended immediately so the cron stops sending notifications
+  // If session is currently paused, account for the final pause duration
+  let totalPausedMs = session.total_paused_ms || 0;
+  if (session.paused_at) {
+    const pausedAt = new Date(session.paused_at).getTime();
+    const finalPauseDuration = Date.now() - pausedAt;
+    totalPausedMs += finalPauseDuration;
+  }
+
+  // Mark session as ended (and clear pause state)
   await supabaseAdmin
     .from('sessions')
-    .update({ ended_at: new Date().toISOString() })
+    .update({
+      ended_at: new Date().toISOString(),
+      paused_at: null,
+      total_paused_ms: totalPausedMs,
+    })
     .eq('id', sessionId);
 
-  // Calculate elapsed time
+  // Calculate elapsed time, subtracting paused time
   const startTime = new Date(session.started_at + 'Z').getTime();
   const now = Date.now();
-  const elapsedMs = now - startTime;
+  const elapsedMs = now - startTime - totalPausedMs;
   const elapsedMinutes = Math.max(1, Math.round(elapsedMs / 1000 / 60));
 
   // Fetch streak info
