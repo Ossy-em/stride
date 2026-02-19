@@ -39,10 +39,12 @@ export async function POST(request: NextRequest) {
 
     // Email notification to you
     try {
-      await resend.emails.send({
-        from: 'Stride <notifications@trystrideai.com>',
-        to: 'emosinachi@gmail.com',
-        subject: `Stride Feedback: ${type || 'general'} from ${user.email}`,
+     await resend.emails.send({
+  from: 'Stride <hello@trystrideai.com>',
+  to: 'hello@trystrideai.com',
+  replyTo: user.email,
+  subject: `Stride Feedback: ${type || 'general'} from ${user.email}`,
+
         html: `
           <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #1a3a2f;">New Feedback</h2>
