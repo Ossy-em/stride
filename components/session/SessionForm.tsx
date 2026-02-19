@@ -1,20 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Clock, Zap, Code, PenTool, BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import UpgradePrompt from '@/components/shared/UpgradePrompt';
 
-type TaskType = 'coding' | 'writing' | 'reading';
+type TaskType = 'writing' | 'reading' | 'coding';
+
 
 export default function SessionForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{         // ← typed to allow '' temporarily
+    taskDescription: string;
+    taskType: TaskType;
+    plannedDuration: number | '';
+  }>({
     taskDescription: '',
     taskType: 'coding' as TaskType,
     plannedDuration: 25,
   });
+
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'session_limit' | 'duration_limit'>('session_limit');
+  const [upgradeContext, setUpgradeContext] = useState<any>(null);
+  const [planInfo, setPlanInfo] = useState<{ plan: string; sessionsToday: number; dailyLimit: number } | null>(null);
+
+  // *** Get user's timezone once ***
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Fetch plan info on mount - with timezone
+  useEffect(() => {
+    const tz = encodeURIComponent(userTimezone);
+    fetch(`/api/user/plan?tz=${tz}`)
+      .then(res => res.json())
+      .then(data => {
+        setPlanInfo({
+          plan: data.plan,
+          sessionsToday: data.sessions?.todayCount || 0,
+          dailyLimit: data.sessions?.dailyLimit || -1,
+        });
+      })
+      .catch(() => {});
+  }, [userTimezone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +53,36 @@ export default function SessionForm() {
       const response = await fetch('/api/sessions/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          plannedDuration: formData.plannedDuration || 25, // ← always a number when submitted
+          timezone: userTimezone,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to start session');
-      const { sessionId } = await response.json();
-      router.push(`/session/active?id=${sessionId}`);
+      const data = await response.json();
+
+      if (response.status === 403 && data.upgrade) {
+        if (data.sessionsToday !== undefined) {
+          setUpgradeReason('session_limit');
+          setUpgradeContext({
+            sessionsUsed: data.sessionsToday,
+            sessionLimit: data.limit,
+          });
+        } else if (data.maxAllowed !== undefined) {
+          setUpgradeReason('duration_limit');
+          setUpgradeContext({
+            maxDuration: data.maxAllowed,
+          });
+        }
+        setShowUpgrade(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!response.ok) throw new Error(data.error || 'Failed to start session');
+
+      router.push(`/session/active?id=${data.sessionId}`);
     } catch (error) {
       console.error('Error starting session:', error);
       alert('Failed to start session. Please try again.');
@@ -38,12 +91,15 @@ export default function SessionForm() {
   };
 
   const taskTypes = [
-    { value: 'coding', label: 'Development', icon: Code },
     { value: 'writing', label: 'Writing', icon: PenTool },
     { value: 'reading', label: 'Learning', icon: BookOpen },
+    { value: 'coding', label: 'Development', icon: Code },
   ];
 
   const durationPresets = [15, 25, 45, 60];
+
+  const showSessionCount = planInfo && planInfo.plan === 'free' && planInfo.dailyLimit > 0;
+  const sessionsRemaining = planInfo ? planInfo.dailyLimit - planInfo.sessionsToday : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -84,7 +140,7 @@ export default function SessionForm() {
               id="task"
               type="text"
               className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 transition-all"
-              placeholder="e.g., Debug API bug, Write blog post outline..."
+              placeholder="e.g., Finish chapter 3, Build login feature, Draft proposal..."
               value={formData.taskDescription}
               onChange={(e) => setFormData({ ...formData, taskDescription: e.target.value })}
               required
@@ -93,7 +149,7 @@ export default function SessionForm() {
             />
           </div>
 
-          {/* Task Type - Visual Selector */}
+          {/* Task Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Task Type
@@ -131,7 +187,7 @@ export default function SessionForm() {
             </div>
           </div>
 
-          {/* Duration - Preset Buttons + Custom */}
+          {/* Duration */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               <div className="flex items-center gap-2">
@@ -159,21 +215,53 @@ export default function SessionForm() {
                   type="number"
                   className="w-12 bg-transparent text-center text-sm font-medium text-gray-700 focus:outline-none"
                   value={formData.plannedDuration}
-                  onChange={(e) =>
-                    setFormData({ ...formData, plannedDuration: parseInt(e.target.value) || 25 })
-                  }
-                  min={3}
-                  max={120}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      plannedDuration: val === '' ? '' : parseInt(val), // ← allow empty while typing
+                    });
+                  }}
+                  onBlur={() => {
+                    // Snap to valid range when user leaves the field
+                    if (formData.plannedDuration === '' || (formData.plannedDuration as number) < 3) {
+                      setFormData({ ...formData, plannedDuration: 25 });
+                    } else if ((formData.plannedDuration as number) > 180) {
+                      setFormData({ ...formData, plannedDuration: 180 });
+                    }
+                  }}
+                  min={7}
+                  max={180}
                 />
                 <span className="text-sm text-gray-400">min</span>
               </div>
             </div>
             <p className="text-xs text-gray-400">
-              Tip: Start with 25 minutes. You can always extend.
+              {planInfo?.plan === 'free'
+                ? 'Free plan: up to 30 minutes per session.'
+                : 'Tip: Start with 25 minutes. You can always extend.'}
             </p>
           </div>
 
-          {/* Submit Button */}
+          {/* Session count indicator for free users */}
+          {showSessionCount && (
+            <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${
+              sessionsRemaining <= 1
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <span className="text-sm text-gray-600">
+                Sessions today
+              </span>
+              <span className={`text-sm font-medium ${
+                sessionsRemaining <= 1 ? 'text-amber-600' : 'text-gray-900'
+              }`}>
+                {planInfo!.sessionsToday}/{planInfo!.dailyLimit} used
+              </span>
+            </div>
+          )}
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading || !formData.taskDescription.trim()}
@@ -196,11 +284,20 @@ export default function SessionForm() {
         {/* Quick tip */}
         <div className="mt-8 p-4 bg-white border border-gray-200 rounded-xl">
           <p className="text-sm text-gray-600">
-            <span className="font-medium text-gray-900">💡 Quick tip:</span> Be specific about your
+            <span className="font-medium text-gray-900">Quick tip:</span> Be specific about your
             task. "Write intro paragraph for blog post" works better than "Work on blog."
           </p>
         </div>
       </main>
+
+      {/* Upgrade modal */}
+      {showUpgrade && (
+        <UpgradePrompt
+          reason={upgradeReason}
+          onClose={() => setShowUpgrade(false)}
+          context={upgradeContext}
+        />
+      )}
     </div>
   );
 }
