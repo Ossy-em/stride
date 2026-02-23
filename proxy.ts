@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Set this to true to enable maintenance mode
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 // Your secret password - CHANGE THIS!
 const MAINTENANCE_PASSWORD = 'stride-testing-2024';
