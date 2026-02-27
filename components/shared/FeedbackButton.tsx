@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 export default function FeedbackButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const [type, setType] = useState<'bug' | 'idea' | 'general'>('general');
+  const [type, setType] = useState<'issue' | 'idea' | 'general'>('general');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const pathname = usePathname();
@@ -89,9 +89,9 @@ export default function FeedbackButton() {
           {/* Type selector */}
           <div className="flex gap-2 mb-3">
             {[
-              { value: 'bug' as const, label: '🐛 Bug' },
-              { value: 'idea' as const, label: '💡 Idea' },
-              { value: 'general' as const, label: '💬 General' },
+              { value: 'issue' as const, label: ' Issue' },
+              { value: 'idea' as const, label: ' Idea' },
+              { value: 'general' as const, label: ' General' },
             ].map((option) => (
               <button
                 key={option.value}
@@ -112,7 +112,7 @@ export default function FeedbackButton() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={
-              type === 'bug'
+              type === 'issue'
                 ? "What happened? What did you expect?"
                 : type === 'idea'
                 ? "What would make Stride better?"
