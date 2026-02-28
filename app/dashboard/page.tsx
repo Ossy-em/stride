@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<string>('free');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -28,10 +29,11 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  // Fetch dashboard data
+  // Fetch dashboard data + plan
   useEffect(() => {
     if (status === 'authenticated') {
       fetchDashboardData();
+      fetchUserPlan();
     }
   }, [status]);
 
@@ -39,8 +41,8 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-     const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);
-const res = await fetch(`/api/dashboard?tz=${tz}`);
+      const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      const res = await fetch(`/api/dashboard?tz=${tz}`);
 
       if (!res.ok) {
         throw new Error('Failed to fetch dashboard data');
@@ -53,6 +55,19 @@ const res = await fetch(`/api/dashboard?tz=${tz}`);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserPlan = async () => {
+    try {
+      const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      const res = await fetch(`/api/user/plan?tz=${tz}`);
+      if (res.ok) {
+        const planData = await res.json();
+        setUserPlan(planData.plan || 'free');
+      }
+    } catch (err) {
+      console.error('Error fetching plan:', err);
     }
   };
 
@@ -115,15 +130,21 @@ const res = await fetch(`/api/dashboard?tz=${tz}`);
     <div className="min-h-screen bg-gray-50">
       {/* Simple Header */}
       <header className="bg-white border-b border-gray-100">
-        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl mx-auto px-6 sm:px-12 lg:px-24 py-4 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
             <img 
               src="/icons/stride-light.png" 
               alt="Stride" 
-              className=" h-16"
+              className="h-16"
             />
-            {/* <span className="text-lg font-bold text-gray-900">Stride</span> */}
           </a>
+          {userPlan === 'premium' && (
+            <div className="flex items-center">
+              <span className="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-lime-400 text-[#1a3a2f] rounded-full">
+                Pro
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
