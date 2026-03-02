@@ -1,6 +1,5 @@
-// ============================================
+
 // USER
-// ============================================
 export interface User {
   id: string;
   email: string;
@@ -8,9 +7,7 @@ export interface User {
   created_at: string;
 }
 
-// ============================================
 // SESSION
-// ============================================
 export interface Session {
   id: string;
   user_id: string;
@@ -25,9 +22,7 @@ export interface Session {
   ended_at?: string;
 }
 
-// ============================================
 // CHECK-IN
-// ============================================
 export type CheckInResponse = 'focused' | 'neutral' | 'distracted';
 
 export interface CheckIn {
@@ -39,9 +34,7 @@ export interface CheckIn {
   minute_mark?: number; // When in the session this happened
 }
 
-// ============================================
 // INTERVENTION
-// ============================================
 export type InterventionStrategy = 'take_break' | 'switch_task' | 'push_through' | 'check_in';
 
 export interface Intervention {
@@ -55,16 +48,13 @@ export interface Intervention {
   minute_mark?: number;
 }
 
-// ============================================
-// DASHBOARD API RESPONSE (NEW)
-// ============================================
+// DASHBOARD API RESPONSE
 export interface DashboardResponse {
-  // User info
+
   user: {
     firstName: string | null;
   };
 
-  // Greeting & context
   greeting: {
     timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
     message: string;
@@ -73,7 +63,7 @@ export interface DashboardResponse {
 
   // Today's stats
   today: {
-    score: number | null; // null = no sessions yet
+    score: number | null;
     sessions: number;
     focusMinutes: number;
   };
@@ -89,14 +79,14 @@ export interface DashboardResponse {
   streak: {
     current: number;
     longest: number;
-    isAtRisk: boolean; // Has streak but no session today
+    isAtRisk: boolean; 
   };
 
   // This week
   week: {
     sessions: number;
     avgScore: number;
-    trend: number; // % change from last week
+    trend: number; 
     focusMinutes: number;
   };
 
@@ -105,7 +95,7 @@ export interface DashboardResponse {
     peakHours: {
       start: number;
       end: number;
-      improvement: number; // % better than average
+      improvement: number;
     } | null;
     bestDay: {
       day: string;
@@ -130,9 +120,7 @@ export interface DashboardResponse {
   isNewUser: boolean;
 }
 
-// ============================================
 // FOCUS FINGERPRINT (Patterns Page)
-// ============================================
 export interface FocusFingerprintData {
   // Peak performance
   peakHours: {
@@ -178,9 +166,7 @@ export interface FocusFingerprintData {
   }[];
 }
 
-// ============================================
 // HEATMAP (Legacy - keep for compatibility)
-// ============================================
 export interface HeatmapCell {
   day: string;
   time_block: string;
@@ -188,9 +174,7 @@ export interface HeatmapCell {
   session_count: number;
 }
 
-// ============================================
 // LEGACY DASHBOARD STATS (for backward compat)
-// ============================================
 export interface DashboardStats {
   today_focus_score: number;
   weekly_trend: number;
