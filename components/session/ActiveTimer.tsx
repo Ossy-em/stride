@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Square, Sparkles, Bell, BellOff, Pause, Play } from 'lucide-react';
 import CheckInModal from './CheckInModal';
 import InterventionNotification from './InterventionNotification';
+import FirstSessionOverlay from './FirstSessionOverlay';
 import { setupPushNotifications, type PushSetupResult } from '@/lib/push-subscription';
 
 interface ActiveTimerProps {
@@ -13,6 +14,13 @@ interface ActiveTimerProps {
   plannedDuration: number;
   startedAt: string;
 }
+
+// 👇 Hardcoded demo intervention for first-session users
+const DEMO_INTERVENTION = {
+  id: 'demo-intervention',
+  message: "Hey! 👋 This is how Stride checks in with you. We noticed you're in your first session — you're doing great. Respond to these nudges and we'll learn your focus patterns over time.",
+  strategy: 'check_in' as const,
+};
 
 export default function ActiveTimer({ sessionId, taskDescription, plannedDuration, startedAt }: ActiveTimerProps) {
   const router = useRouter();
@@ -45,6 +53,11 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [userPlan, setUserPlan] = useState<string | null>(null);
 
+  //  NEW: First session state
+  const [isFirstSession, setIsFirstSession] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const demoInterventionFired = useRef(false);
+
   const CHECK_IN_INTERVAL = 20 * 60;
   const lastInterventionCheck = useRef(0);
   const shownInterventionIds = useRef<Set<string>>(new Set());
@@ -55,6 +68,26 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
       .then(res => res.json())
       .then(data => setUserPlan(data.plan))
       .catch(() => {});
+  }, []);
+
+  //  NEW: Detect first session on mount
+  useEffect(() => {
+    const checkFirstSession = async () => {
+      try {
+        const res = await fetch('/api/sessions/count');
+        if (res.ok) {
+          const data = await res.json();
+          // If this is their first or only session (the current one), show onboarding
+          if (data.count <= 1) {
+            setIsFirstSession(true);
+            setShowOnboarding(true);
+          }
+        }
+      } catch (e) {
+        // Non-critical, skip silently
+      }
+    };
+    checkFirstSession();
   }, []);
 
   // *** Check if session was already paused (e.g., page refresh) ***
@@ -149,7 +182,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     return () => clearInterval(interval);
   }, [sessionStartTime, lastCheckInTime, isPaused, totalPausedMs]);
 
-  // Intervention check
+  //  UPDATED: Intervention check — demo at 2 mins for first session, normal flow after
   useEffect(() => {
     if (isPaused) return;
 
@@ -158,6 +191,16 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
       if (interventionCount >= 3 || elapsedMins < 1 || showIntervention) return;
       if (elapsedMins <= lastInterventionCheck.current) return;
       lastInterventionCheck.current = elapsedMins;
+
+      //  Fire demo intervention at exactly 2 mins for first-session users
+      if (isFirstSession && elapsedMins === 2 && !demoInterventionFired.current) {
+        demoInterventionFired.current = true;
+        showInterventionIfNew(DEMO_INTERVENTION);
+        return;
+      }
+
+      // Normal intervention check (skip 2-min mark for first session to avoid double-fire)
+      if (isFirstSession && elapsedMins === 2) return;
 
       try {
         const controller = new AbortController();
@@ -184,7 +227,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     if (elapsedSeconds > 0 && elapsedSeconds % 60 === 0) {
       checkForIntervention();
     }
-  }, [elapsedSeconds, sessionId, showIntervention, interventionCount, showInterventionIfNew, isPaused]);
+  }, [elapsedSeconds, sessionId, showIntervention, interventionCount, showInterventionIfNew, isPaused, isFirstSession]);
 
   // *** Pause/Resume handler ***
   const handlePauseResume = async () => {
@@ -252,6 +295,9 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     driftReason?: 'mind_wandering' | 'feeling_stuck' | 'tired' | 'external';
     breakEffectiveness?: 'helped' | 'somewhat' | 'not_really';
   }) => {
+    // 👇 Skip API call for demo intervention
+    if (intervention?.id === 'demo-intervention') return;
+
     try {
       const responseTimeMs = interventionShownAt ? Date.now() - interventionShownAt : undefined;
       await fetch('/api/interventions/respond', {
@@ -282,6 +328,11 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
 
   return (
     <>
+      {/* 👇 NEW: First session onboarding overlay */}
+      {showOnboarding && (
+        <FirstSessionOverlay onDismiss={() => setShowOnboarding(false)} />
+      )}
+
       <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#0f2a1f] via-[#143527] to-[#1a4a35]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_rgba(132,204,22,0.1)_0%,_transparent_60%)]" />
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -419,13 +470,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
             </button>
           </div>
         </div>
-
-        {/* <div className="absolute bottom-8 left-0 right-0 text-center px-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5">
-            <Sparkles className="w-3.5 h-3.5 text-lime-400/60" />
-            <p className="text-sm text-white/40 italic">"Focus is the gateway to excellence."</p>
-          </div>
-        </div> */}
       </div>
 
       <style jsx>{`
