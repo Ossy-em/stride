@@ -81,7 +81,7 @@ export default function PricingSection() {
                     exit={{ opacity: 0, scale: 0.8 }}
                     className="text-[11px] text-lime-600 font-bold"
                   >
-                    Save 18%
+                    Save 20%
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -162,7 +162,7 @@ export default function PricingSection() {
                     transition={{ duration: 0.3 }}
                     className="text-4xl font-bold text-white tracking-tight"
                   >
-                    ${billing === 'monthly' ? '8' : '79'}
+                    ${billing === 'monthly' ? '6' : '58'}
                   </motion.span>
                 </AnimatePresence>
                 <span className="text-white/30 text-sm">/{billing === 'monthly' ? 'mo' : 'yr'}</span>
@@ -176,7 +176,7 @@ export default function PricingSection() {
                   className="text-[13px] text-white/25 mb-7"
                 >
                   {billing === 'yearly'
-                    ? "That's ~$6.58/month, billed annually"
+                    ? "That's ~$4.83/month, billed annually"
                     : 'Billed monthly, cancel anytime'}
                 </motion.p>
               </AnimatePresence>
