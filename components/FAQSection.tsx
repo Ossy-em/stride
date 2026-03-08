@@ -19,7 +19,7 @@ const faqs = [
   {
     question: 'Is Stride free?',
     answer:
-      'Stride has a free plan with 3 sessions per day (up to 30 minutes each). For unlimited sessions, longer durations, smarter AI, and your full Focus Fingerprint, you can upgrade to Premium for $8/month or $79/year.',
+      'Stride has a free plan with 3 sessions per day (up to 30 minutes each). For unlimited sessions, longer durations, smarter AI, and your full Focus Fingerprint, you can upgrade to Premium for $6/month or $58/year.',
   },
   {
     question: 'Does it work on mobile?',
