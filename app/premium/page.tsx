@@ -63,10 +63,10 @@ export default function PremiumPage() {
     }
   };
 
-  const monthlyPrice = 8;
-  const yearlyPrice = 79;
+  const monthlyPrice = 6;
+  const yearlyPrice = 58;
   const currentPrice = billing === 'monthly' ? monthlyPrice : yearlyPrice;
-  const savings = billing === 'yearly' ? Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100) : 0;
+  const savings = billing === 'yearly' ? 20 : 0;
 
   const isPremium = currentPlan === 'premium';
 
@@ -194,7 +194,7 @@ export default function PremiumPage() {
                 </div>
                 {billing === 'yearly' && (
                   <p className="text-white/40 text-xs mb-6">
-                    $6.58/month billed annually
+                    $4.83/month, billed annually
                   </p>
                 )}
                 {billing === 'monthly' && <div className="mb-6" />}
