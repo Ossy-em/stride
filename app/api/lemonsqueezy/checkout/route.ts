@@ -4,10 +4,9 @@ import { getCurrentUser } from '@/lib/auth';
 const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY!;
 const LS_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID!;
 
-// Create these variants in your Lemon Squeezy dashboard, then paste variant IDs here
 const VARIANT_IDS = {
-  monthly: process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID!, // e.g., '123456'
-  yearly: process.env.LEMONSQUEEZY_YEARLY_VARIANT_ID!,   // e.g., '123457'
+  monthly: process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID!, 
+  yearly: process.env.LEMONSQUEEZY_YEARLY_VARIANT_ID!,   
 };
 console.log('🔍 Variant IDs:', VARIANT_IDS);
 console.log('🔍 Store ID:', LS_STORE_ID);
@@ -32,7 +31,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan not configured' }, { status: 500 });
     }
 
-    // Create checkout via Lemon Squeezy API
     const response = await fetch('https://api.lemonsqueezy.com/v1/checkouts', {
       method: 'POST',
       headers: {
