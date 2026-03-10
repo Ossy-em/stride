@@ -45,15 +45,11 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     supported: false, subscribed: false, permission: null,
   });
   const [showNotificationHelp, setShowNotificationHelp] = useState(false);
-
-  // *** Pause/resume state ***
   const [isPaused, setIsPaused] = useState(false);
   const [pauseLoading, setPauseLoading] = useState(false);
   const [totalPausedMs, setTotalPausedMs] = useState(0);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [userPlan, setUserPlan] = useState<string | null>(null);
-
-  //  NEW: First session state
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const demoInterventionFired = useRef(false);
@@ -62,7 +58,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
   const lastInterventionCheck = useRef(0);
   const shownInterventionIds = useRef<Set<string>>(new Set());
 
-  // *** Fetch user plan on mount ***
+
   useEffect(() => {
     fetch('/api/user/plan')
       .then(res => res.json())
@@ -70,14 +66,13 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
       .catch(() => {});
   }, []);
 
-  //  NEW: Detect first session on mount
   useEffect(() => {
     const checkFirstSession = async () => {
       try {
         const res = await fetch('/api/sessions/count');
         if (res.ok) {
           const data = await res.json();
-          // If this is their first or only session (the current one), show onboarding
+
           if (data.count <= 1) {
             setIsFirstSession(true);
             setShowOnboarding(true);
@@ -90,7 +85,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     checkFirstSession();
   }, []);
 
-  // *** Check if session was already paused (e.g., page refresh) ***
+  //  Check if session was already paused  
   useEffect(() => {
     const checkSessionState = async () => {
       try {
@@ -150,7 +145,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     });
   }, []);
 
-  // Check for pending interventions on mount and when app regains focus
   useEffect(() => {
     checkPendingInterventions();
 
@@ -164,7 +158,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [checkPendingInterventions]);
 
-  // Timer (pauses when isPaused is true)
   useEffect(() => {
     const interval = setInterval(() => {
       if (isPaused) return;
@@ -182,7 +175,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     return () => clearInterval(interval);
   }, [sessionStartTime, lastCheckInTime, isPaused, totalPausedMs]);
 
-  //  UPDATED: Intervention check — demo at 2 mins for first session, normal flow after
   useEffect(() => {
     if (isPaused) return;
 
@@ -192,14 +184,12 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
       if (elapsedMins <= lastInterventionCheck.current) return;
       lastInterventionCheck.current = elapsedMins;
 
-      //  Fire demo intervention at exactly 2 mins for first-session users
       if (isFirstSession && elapsedMins === 2 && !demoInterventionFired.current) {
         demoInterventionFired.current = true;
         showInterventionIfNew(DEMO_INTERVENTION);
         return;
       }
 
-      // Normal intervention check (skip 2-min mark for first session to avoid double-fire)
       if (isFirstSession && elapsedMins === 2) return;
 
       try {
@@ -295,7 +285,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     driftReason?: 'mind_wandering' | 'feeling_stuck' | 'tired' | 'external';
     breakEffectiveness?: 'helped' | 'somewhat' | 'not_really';
   }) => {
-    // 👇 Skip API call for demo intervention
     if (intervention?.id === 'demo-intervention') return;
 
     try {
@@ -328,7 +317,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
 
   return (
     <>
-      {/* 👇 NEW: First session onboarding overlay */}
+
       {showOnboarding && (
         <FirstSessionOverlay onDismiss={() => setShowOnboarding(false)} />
       )}
@@ -357,7 +346,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
             </div>
           )}
 
-          {/* Status badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               {isPaused ? (
@@ -380,7 +368,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
             </span>
           </div>
 
-          {/* Timer circle */}
           <div className="relative">
             <div
               className="absolute rounded-full border border-lime-400/20"
@@ -432,13 +419,11 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
             </div>
           </div>
 
-          {/* Task description */}
           <div className="text-center max-w-md">
             <p className="text-xs uppercase tracking-widest text-lime-400/80 font-medium mb-3">Currently Focused On</p>
             <h1 className="text-2xl md:text-3xl font-semibold text-white leading-tight">{taskDescription}</h1>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-3">
             {canPause && (
               <button
