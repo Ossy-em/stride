@@ -15,10 +15,9 @@ interface ActiveTimerProps {
   startedAt: string;
 }
 
-// 👇 Hardcoded demo intervention for first-session users
 const DEMO_INTERVENTION = {
   id: 'demo-intervention',
-  message: "Hey! 👋 This is how Stride checks in with you. We noticed you're in your first session — you're doing great. Respond to these nudges and we'll learn your focus patterns over time.",
+  message: "Hey! 👋 This is how Stride checks in with you. We noticed you're in your first session. Respond to these nudges and we'll learn your focus patterns over time.",
   strategy: 'check_in' as const,
 };
 
@@ -79,7 +78,7 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
           }
         }
       } catch (e) {
-        // Non-critical, skip silently
+
       }
     };
     checkFirstSession();
@@ -101,7 +100,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
           }
         }
       } catch (e) {
-        // Non-critical, continue without state
       }
     };
     checkSessionState();
@@ -135,7 +133,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     }
   }, [sessionId, showIntervention, showInterventionIfNew, isPaused]);
 
-  // Setup push notifications on mount
   useEffect(() => {
     setupPushNotifications().then((status) => {
       setPushStatus(status);
@@ -219,7 +216,6 @@ export default function ActiveTimer({ sessionId, taskDescription, plannedDuratio
     }
   }, [elapsedSeconds, sessionId, showIntervention, interventionCount, showInterventionIfNew, isPaused, isFirstSession]);
 
-  // *** Pause/Resume handler ***
   const handlePauseResume = async () => {
     setPauseLoading(true);
     try {
