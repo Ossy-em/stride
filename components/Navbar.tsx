@@ -1,154 +1,218 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
 
-const navLinks = [
-  { name: 'Features', href: '#features' },
-  { name: 'How It Works', href: '#how-it-works' },
-  // { name: 'Pricing', href: '#pricing' },
-  { name: 'FAQ', href: '#faq' },
+const links = [
+  { name: "How it works", href: "#how-it-works" },
+  { name: "Stories", href: "#stories" },
+  { name: "Contact", href: "mailto:hello@trystrideai.com" },
 ];
 
-export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default function StrideNavbar() {
+  // "top" = at the very top (initial state), "down" = scrolling down, "up" = scrolling up
+  const [scrollState, setScrollState] = useState<"top" | "down" | "up">("top");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const lastY = useRef(0);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    lastY.current = window.scrollY;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+
+      if (y <= 24) {
+        setScrollState("top");
+      } else if (y > lastY.current) {
+        setScrollState("up");
+      } else if (y < lastY.current) {
+        setScrollState("down");
+      }
+
+      lastY.current = y;
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isMobileMenuOpen]);
+  // Only "stride" shows (no bg) when scrolling up. Full nav + green border when scrolling down.
+  // At top, keep the original first-visit look.
+  const isUp = scrollState === "up";
+  const isDown = scrollState === "down";
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
-          ? 'bg-[#0a1f16]/80 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_30px_rgba(0,0,0,0.3)]'
-          : 'bg-transparent'
-      }`}
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: isDown ? "rgba(255,255,255,0.8)" : "transparent",
+        backdropFilter: isDown ? "blur(10px)" : "none",
+        WebkitBackdropFilter: isDown ? "blur(10px)" : "none",
+        borderBottom: isDown
+          ? "0.5px solid #10b981"
+          : "0.5px solid transparent",
+      }}
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-8">
-        <div className="flex items-center justify-between h-[72px]">
-          {/* Logo */}
-          <a href="#" className="relative z-10">
-            <Image
-              src="/icons/icon.png"
-              alt="Stride"
-              width={100}
-              height={28}
-              className="h-11 w-auto"
-            />
-          </a>
+      <nav className="flex items-center justify-between py-4 px-6 md:px-12">
+        {/* Wordmark — always visible */}
+        <a
+          href="#"
+          style={{
+            fontFamily: "'Lora', serif",
+            fontWeight: 600,
+            fontSize: "20px",
+            color: "#1a1a17",
+            letterSpacing: "-0.01em",
+            textDecoration: "none",
+          }}
+        >
+          stride
+        </a>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link, i) => (
-              <motion.a
-                key={link.name}
-                href={link.href}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.08 }}
-                className="relative px-4 py-2 text-[13px] tracking-wide text-white/50 hover:text-white transition-colors duration-300 group"
-              >
-                {link.name}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-lime-400 rounded-full group-hover:w-4 transition-all duration-300" />
-              </motion.a>
-            ))}
-          </div>
-
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <motion.a
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              href="/auth/signin"
-              className="px-4 py-2 text-[13px] tracking-wide text-white/50 hover:text-white transition-colors duration-300"
+        {/* Desktop links — hidden while scrolling up */}
+        <div
+          className="hidden md:flex items-center gap-7 transition-all duration-300"
+          style={{
+            opacity: isUp ? 0 : 1,
+            pointerEvents: isUp ? "none" : "auto",
+          }}
+        >
+          {links.map((l) => (
+            <a
+              key={l.name}
+              href={l.href}
+              className="transition-colors duration-300"
+              style={{
+                fontFamily: "'Geist', sans-serif",
+                fontSize: "13px",
+                fontWeight: 400,
+                color: "#5a5a50",
+                letterSpacing: "0.01em",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a17")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#5a5a50")}
             >
-              Sign In
-            </motion.a>
-            <motion.a
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.7 }}
-              href="/auth/signin"
-              className="group flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold tracking-wide text-[#0a1f16] bg-lime-400 rounded-full hover:bg-lime-300 transition-all duration-300 hover:shadow-[0_0_20px_rgba(163,230,53,0.3)]"
-            >
-              Get Started
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-300" />
-            </motion.a>
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden relative z-10 p-2 text-white/70 hover:text-white transition-colors"
+              {l.name}
+            </a>
+          ))}
+          <a
+            href="#"
+            className="transition-colors duration-500 hover:bg-[#0c2518]"
+            style={{
+              fontFamily: "'Geist', sans-serif",
+              fontSize: "13px",
+              fontWeight: 400,
+              letterSpacing: "0.01em",
+              color: "#ffffff",
+              background: "#1a1a17",
+              padding: "9px 22px",
+              borderRadius: "100px",
+              textDecoration: "none",
+            }}
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+            Start a session
+          </a>
+        </div>
+
+        {/* Mobile toggle — hidden while scrolling up */}
+        <button
+          className="md:hidden flex flex-col justify-center items-end gap-[5px] transition-opacity duration-300"
+          aria-label="Menu"
+          onClick={() => setMenuOpen((o) => !o)}
+          style={{
+            width: "26px",
+            height: "20px",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            opacity: isUp ? 0 : 1,
+            pointerEvents: isUp ? "none" : "auto",
+          }}
+        >
+          <span
+            style={{
+              display: "block",
+              height: "1.5px",
+              width: "22px",
+              background: "#1a1a17",
+              transition: "transform 0.3s ease, opacity 0.3s ease",
+              transform: menuOpen ? "translateY(6.5px) rotate(45deg)" : "none",
+            }}
+          />
+          <span
+            style={{
+              display: "block",
+              height: "1.5px",
+              width: "22px",
+              background: "#1a1a17",
+              transition: "opacity 0.2s ease",
+              opacity: menuOpen ? 0 : 1,
+            }}
+          />
+          <span
+            style={{
+              display: "block",
+              height: "1.5px",
+              width: "22px",
+              background: "#1a1a17",
+              transition: "transform 0.3s ease",
+              transform: menuOpen ? "translateY(-6.5px) rotate(-45deg)" : "none",
+            }}
+          />
+        </button>
+      </nav>
+
+      {/* Mobile menu panel */}
+      <div
+        className="md:hidden overflow-hidden transition-all duration-300"
+        style={{
+          maxHeight: menuOpen && !isUp ? "320px" : "0px",
+          background: "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          borderBottom: menuOpen && !isUp ? "0.5px solid #0c2518" : "none",
+        }}
+      >
+        <div className="flex flex-col px-6 py-4 gap-1">
+          {links.map((l) => (
+            <a
+              key={l.name}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                fontFamily: "'Geist', sans-serif",
+                fontSize: "15px",
+                fontWeight: 400,
+                color: "#1a1a17",
+                textDecoration: "none",
+                padding: "12px 0",
+                borderBottom: "0.5px solid #e6e6de",
+              }}
+            >
+              {l.name}
+            </a>
+          ))}
+          <a
+            href="#"
+            onClick={() => setMenuOpen(false)}
+            className="text-center"
+            style={{
+              fontFamily: "'Geist', sans-serif",
+              fontSize: "14px",
+              fontWeight: 400,
+              color: "#ffffff",
+              background: "#1a1a17",
+              padding: "12px 22px",
+              borderRadius: "100px",
+              textDecoration: "none",
+              marginTop: "16px",
+            }}
+          >
+            Start a session
+          </a>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: '100vh' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="md:hidden fixed inset-0 top-0 bg-[#0a1f16]/98 backdrop-blur-2xl z-40"
-          >
-            <div className="flex flex-col items-center justify-center h-full gap-2 -mt-16">
-              {navLinks.map((link, i) => (
-                <motion.a
-                  key={link.name}
-                  href={link.href}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + i * 0.08 }}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-2xl font-light text-white/60 hover:text-white py-3 transition-colors"
-                >
-                  {link.name}
-                </motion.a>
-              ))}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex flex-col gap-3 mt-8 w-56"
-              >
-                <a
-                  href="/auth/signin"
-                  className="w-full py-3.5 text-center text-sm font-semibold text-[#0a1f16] bg-lime-400 rounded-full"
-                >
-                  Get Started Free
-                </a>
-                <a
-                  href="/auth/signin"
-                  className="w-full py-3.5 text-center text-sm text-white/60 border border-white/15 rounded-full"
-                >
-                  Sign In
-                </a>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.nav>
+    </header>
   );
 }

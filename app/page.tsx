@@ -12,14 +12,16 @@ import Footer from '../components/Footer';
 
 export default function StrideLandingPage() {
   return (
-    <main className="bg-white text-gray-900 overflow-x-hidden">
+   <main className="bg-white text-gray-900 overflow-x-clip">
       <Navbar />
       <HeroSection />
       <BentoFeatures />
       <FeatureSections />
+      
+      
       <TestimonialsSection />
-      <PricingSection />
-      <FAQSection />
+      {/* <PricingSection /> */}
+      {/* <FAQSection /> */}
       <CTASection />
       <Footer />
     </main>

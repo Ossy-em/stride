@@ -1,194 +1,241 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { ArrowRight, Brain, Bell, TrendingUp } from 'lucide-react';
+import { useRef, useState, useEffect } from "react";
 
-function FloatingParticles() {
+// radius of the soft reveal circle (medium, Sonia-like)
+const GLOW_RADIUS = 260;
+
+// A dense field of soft organic "petals" spanning the hero width.
+// Emerald palette, varied tone + opacity + rotation so it reads as artwork,
+// not four gradient smudges. Rendered twice: dim base + bright (masked) layer.
+type Petal = {
+  cx: number; cy: number; rx: number; ry: number;
+  rot: number; fill: string; o: number;
+};
+
+const petals: Petal[] = [
+  { cx: 90,  cy: 250, rx: 120, ry: 60,  rot: -28, fill: "#5fae8e", o: 0.9 },
+  { cx: 180, cy: 360, rx: 90,  ry: 150, rot: 18,  fill: "#3f8f6e", o: 0.8 },
+  { cx: 250, cy: 230, rx: 80,  ry: 130, rot: -12, fill: "#7cc0a4", o: 0.85 },
+  { cx: 340, cy: 320, rx: 110, ry: 70,  rot: 32,  fill: "#2f8f6e", o: 0.75 },
+  { cx: 430, cy: 250, rx: 70,  ry: 120, rot: -22, fill: "#9ad0bb", o: 0.8 },
+  { cx: 520, cy: 360, rx: 130, ry: 80,  rot: 14,  fill: "#4f9f85", o: 0.7 },
+  { cx: 620, cy: 240, rx: 90,  ry: 140, rot: -18, fill: "#34d399", o: 0.78 },
+  { cx: 720, cy: 330, rx: 100, ry: 65,  rot: 26,  fill: "#5fae8e", o: 0.72 },
+  { cx: 810, cy: 250, rx: 75,  ry: 125, rot: -30, fill: "#2f8f6e", o: 0.8 },
+  { cx: 900, cy: 350, rx: 120, ry: 75,  rot: 20,  fill: "#7cc0a4", o: 0.74 },
+  { cx: 980, cy: 240, rx: 85,  ry: 135, rot: -14, fill: "#10b981", o: 0.7 },
+  { cx: 1070,cy: 330, rx: 105, ry: 70,  rot: 28,  fill: "#4f9f85", o: 0.76 },
+  { cx: 1160,cy: 250, rx: 80,  ry: 130, rot: -24, fill: "#9ad0bb", o: 0.78 },
+  { cx: 1250,cy: 350, rx: 125, ry: 80,  rot: 16,  fill: "#3f8f6e", o: 0.7 },
+  { cx: 1330,cy: 240, rx: 90,  ry: 140, rot: -20, fill: "#5fae8e", o: 0.76 },
+  { cx: 1420,cy: 330, rx: 100, ry: 65,  rot: 30,  fill: "#34d399", o: 0.72 },
+];
+
+function PetalField({ opacity }: { opacity: number }) {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-lime-400/30 rounded-full"
-          style={{
-            left: `${15 + i * 15}%`,
-            top: `${20 + (i % 3) * 25}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0.2, 0.6, 0.2],
-          }}
-          transition={{
-            duration: 4 + i * 0.5,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: i * 0.7,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function HeroPills() {
-  const pills = [
-    { icon: Brain, label: 'Learns You', sub: 'Builds your focus profile' },
-    { icon: Bell, label: 'Nudges You', sub: 'Before you lose focus' },
-    { icon: TrendingUp, label: 'Gets Smarter', sub: 'Adapts to your patterns' },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.9, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="grid grid-cols-3 gap-3 sm:gap-5 max-w-2xl mx-auto mt-14 sm:mt-20 px-2"
+    <svg
+      viewBox="0 0 1440 600"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity }}
+      aria-hidden
     >
-      {pills.map((pill, i) => {
-        const Icon = pill.icon;
-        return (
-          <motion.div
-            key={pill.label}
-            whileHover={{ y: -4, scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="group relative p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-center cursor-default
-              bg-white/[0.04] border border-white/[0.06]
-              hover:bg-white/[0.07] hover:border-lime-400/20
-              transition-colors duration-500"
-          >
-            {/* Subtle glow on hover */}
-            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_center,_rgba(163,230,53,0.06)_0%,_transparent_70%)]" />
-            <div className="relative z-10">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 rounded-xl sm:rounded-2xl bg-lime-400/10 flex items-center justify-center group-hover:bg-lime-400/15 transition-colors duration-300">
-                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-lime-400" />
-              </div>
-              <p className="text-xs sm:text-sm font-semibold text-white tracking-wide">{pill.label}</p>
-              <p className="text-[10px] sm:text-xs text-white/30 mt-1 hidden sm:block">{pill.sub}</p>
-            </div>
-          </motion.div>
-        );
-      })}
-    </motion.div>
+      <defs>
+        <filter id="petalBlur" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="22" />
+        </filter>
+      </defs>
+      <g filter="url(#petalBlur)">
+        {petals.map((p, i) => (
+          <ellipse
+            key={i}
+            cx={p.cx}
+            cy={p.cy}
+            rx={p.rx}
+            ry={p.ry}
+            fill={p.fill}
+            opacity={p.o}
+            transform={`rotate(${p.rot} ${p.cx} ${p.cy})`}
+          />
+        ))}
+      </g>
+    </svg>
   );
 }
 
-export default function HeroSection() {
+
+export default function StrideHero() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: -1000, y: -1000 });
+  const [inside, setInside] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const move = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      setPos({ x: e.clientX - r.left, y: e.clientY - r.top });
+    };
+    const enter = () => setInside(true);
+    const leave = () => setInside(false);
+    el.addEventListener("mousemove", move);
+    el.addEventListener("mouseenter", enter);
+    el.addEventListener("mouseleave", leave);
+    return () => {
+      el.removeEventListener("mousemove", move);
+      el.removeEventListener("mouseenter", enter);
+      el.removeEventListener("mouseleave", leave);
+    };
+  }, []);
+
+  // soft circular mask centered on the cursor — reveals the bright layer
+  const maskValue = `radial-gradient(circle ${GLOW_RADIUS}px at ${pos.x}px ${pos.y}px, #000 0%, rgba(0,0,0,0.5) 45%, transparent 75%)`;
+
   return (
-    <section className="relative min-h-[92vh] sm:min-h-screen flex flex-col justify-center overflow-hidden bg-[#0a1f16]">
-      {/* Background layers */}
-      <div className="absolute inset-0">
-        {/* Top gradient orb */}
-        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse,_rgba(132,204,22,0.12)_0%,_rgba(132,204,22,0.04)_40%,_transparent_70%)]" />
-        {/* Bottom subtle gradient */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#0d2a1c] to-transparent" />
-        {/* Noise texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
-        {/* Grid lines */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: '80px 80px',
-          }}
-        />
+    <section
+      ref={sectionRef}
+      className="relative w-full min-h-screen overflow-hidden flex flex-col"
+      style={{ background: "#ffffff" }}
+    >
+      {/* BASE LAYER — dim blobs, always visible */}
+      <div className="absolute inset-0 z-[1]" style={{ pointerEvents: "none" }}>
+        <PetalField opacity={0.18} />
       </div>
 
-      <FloatingParticles />
+      {/* BRIGHT LAYER — revealed only inside the cursor glow */}
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{
+          pointerEvents: "none",
+          WebkitMaskImage: inside ? maskValue : "none",
+          maskImage: inside ? maskValue : "none",
+          opacity: inside ? 1 : 0,
+          transition: "opacity 0.4s ease",
+        }}
+      >
+        <PetalField opacity={1} />
+      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 pt-24 pb-16">
-        {/* Social proof */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="flex justify-center mb-8 sm:mb-10"
+      {/* CUSTOM CURSOR — soft glow following the pointer */}
+      <div
+        className="absolute z-[5] rounded-full"
+        style={{
+          pointerEvents: "none",
+          left: pos.x,
+          top: pos.y,
+          width: GLOW_RADIUS * 2,
+          height: GLOW_RADIUS * 2,
+          transform: "translate(-50%, -50%)",
+          background:
+            "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)",
+          opacity: inside ? 1 : 0,
+          transition: "opacity 0.3s ease",
+        }}
+      />
+
+      {/* Top white mask */}
+      <div
+        className="pointer-events-none absolute top-0 left-0 right-0 z-[2]"
+        style={{ height: "130px", background: "#ffffff" }}
+      />
+
+      {/* Bottom fade */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[2]"
+        style={{
+          height: "180px",
+          background: "linear-gradient(to top, #ffffff 55%, transparent)",
+        }}
+      />
+
+      {/* Side masks */}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 z-[2]"
+        style={{
+          width: "80px",
+          background: "linear-gradient(to right, #ffffff 35%, transparent)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 z-[2]"
+        style={{
+          width: "80px",
+          background: "linear-gradient(to left, #ffffff 35%, transparent)",
+        }}
+      />
+
+      {/* Hero content — Sonia hierarchy: small wordmark, big message */}
+      <div className="relative z-[4] flex flex-col items-center text-center flex-1 justify-center px-6">
+
+        {/* stride — small brand label */}
+        <p
+          style={{
+            fontFamily: "'Lora', serif",
+            fontWeight: 500,
+            fontSize: "22px",
+            color: "#1a1a17",
+            letterSpacing: "-0.01em",
+            marginBottom: "16px",
+          }}
         >
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.08]">
-            <div className="flex -space-x-2.5">
-              {[1, 2, 3].map((n) => (
-                <Image
-                  key={n}
-                  src={`/assets/avatars/avatar-${n}.png`}
-                  alt="User"
-                  width={28}
-                  height={28}
-                  className="w-7 h-7 rounded-full border-2 border-[#0a1f16] object-cover"
-                />
-              ))}
-            </div>
-            <span className="text-xs sm:text-[13px] text-white/50 tracking-wide">
-              People are already focusing better
-            </span>
-          </div>
-        </motion.div>
+          stride
+        </p>
 
-        {/* Headline */}
-        <div className="text-center max-w-4xl mx-auto">
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[2rem] sm:text-[2.75rem] lg:text-[3.5rem] font-bold text-white leading-[1.1] mb-5 sm:mb-6 tracking-tight px-2"
-          >
-            Focus Loss Isn't Random.
-            <br />
-            <span className="relative inline-block">
-              <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-lime-300 via-lime-400 to-emerald-400">
-                Stride Predicts It.
-              </span>
-              {/* Glow behind text */}
-              <span className="absolute inset-0 blur-2xl bg-lime-400/20 -z-10" />
-            </span>
-          </motion.h1>
+        {/* Message — the hero-sized statement */}
+        <h1
+          style={{
+            fontFamily: "'Lora', serif",
+            fontWeight: 500,
+            fontSize: "clamp(40px, 6vw, 76px)",
+            lineHeight: 1.05,
+            letterSpacing: "-0.02em",
+            color: "#1a1a17",
+            maxWidth: "900px",
+            marginBottom: "28px",
+          }}
+        >
+          Your AI focus companion that learns{" "}
+          <em className="not-italic" style={{ color: "#1a7a52" }}>
+            when
+          </em>{" "}
+          you drift
+        </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.7 }}
-            className="text-[15px] sm:text-lg text-white/40 max-w-xl sm:max-w-2xl mx-auto mb-9 leading-relaxed tracking-wide px-4"
-          >
-            Stride learns your focus patterns and nudges you right before you drift. Not after.{' '}
-            <span className="text-white/60 font-medium">Before.</span>
-          </motion.p>
+        {/* Tagline — muted */}
+        <p
+          style={{
+            fontFamily: "'Geist', sans-serif",
+            fontSize: "clamp(18px, 2vw, 22px)",
+            fontWeight: 300,
+            lineHeight: 1.5,
+            letterSpacing: "-0.01em",
+            color: "#8a8a80",
+            maxWidth: "520px",
+            marginBottom: "44px",
+          }}
+        >
+          It steps in before it happens, and gets sharper over time.
+        </p>
 
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-3 justify-center px-6 sm:px-0"
-          >
-            <a
-              href="/auth/signin"
-              className="group relative inline-flex items-center justify-center gap-2 px-7 py-4 text-[15px] font-semibold text-[#0a1f16] bg-lime-400 rounded-full overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(163,230,53,0.25)]"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                Start Focusing
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
-              </span>
-              <span className="absolute inset-0 bg-lime-300 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
-            </a>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 text-[15px] font-medium text-white/60 border border-white/10 rounded-full hover:bg-white/[0.04] hover:border-white/15 hover:text-white/80 transition-all duration-300"
-            >
-              See how it works
-            </a>
-          </motion.div>
+        {/* CTA — standard button */}
+        <button
+          className="cursor-pointer transition-colors duration-500 hover:bg-[#0c2518]"
+          style={{
+            fontFamily: "'Geist', sans-serif",
+            fontSize: "13px",
+            fontWeight: 400,
+            letterSpacing: "0.01em",
+            color: "#ffffff",
+            background: "#1a1a17",
+            border: "none",
+            padding: "11px 28px",
+            borderRadius: "100px",
+          }}
+        >
+          Start a session
+        </button>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-[11px] sm:text-xs text-white/25 mt-5 tracking-widest uppercase"
-          >
-           Desktop & Mobile
-          </motion.p>
-        </div>
-
-        {/* Feature pills */}
-        <HeroPills />
       </div>
     </section>
   );
