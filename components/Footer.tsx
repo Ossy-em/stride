@@ -20,7 +20,7 @@ export default function StrideFooter() {
 
   return (
     <footer
-      className="w-full px-6 md:px-12 pt-16 md:pt-[140px] pb-10"
+      className="w-full px-6 md:px-12 pt-16 md:pt-[96px] pb-10"
       style={{ background: "#10221c", overflow: "hidden" }}
     >
       {/* Top row — links + small meta */}
@@ -47,6 +47,7 @@ export default function StrideFooter() {
         </nav>
 
         <div
+          className="text-left md:text-right"
           style={{
             fontFamily: "'Geist', sans-serif",
             fontSize: "13px",
@@ -60,29 +61,56 @@ export default function StrideFooter() {
         </div>
       </div>
 
-      {/* Giant wordmark */}
-      <div
-        aria-hidden
-        style={{
-          fontFamily: "'Lora', serif",
-          fontWeight: 600,
-          fontSize: "clamp(96px, 26vw, 460px)",
-          lineHeight: 0.8,
-          letterSpacing: "-0.04em",
-          color: "#f0f0ec",
-          marginTop: "64px",
-          marginBottom: "-0.08em",
-          whiteSpace: "nowrap",
-        }}
-      >
-        stride
+      <style>{`
+        @keyframes strideShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: 0% 0; }
+        }
+      `}</style>
+
+      {/* Giant wordmark container */}
+      <div className="relative select-none pointer-events-none mt-10 md:mt-12">
+        
+        {/* The Ambient Light Pool (Behind the text) */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75%] h-[55%] -z-10 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at center, rgba(138, 168, 156, 0.18) 0%, rgba(16, 34, 28, 0) 70%)",
+            filter: "blur(24px)",
+          }}
+        />
+
+        {/* The Text */}
+        <div
+          aria-hidden
+          style={{
+            fontFamily: "'Lora', serif",
+            fontWeight: 600,
+            fontSize: "clamp(96px, 26vw, 460px)",
+            lineHeight: 0.78, // Tightened to pull the text up into Lora's empty ascender space
+            letterSpacing: "-0.04em",
+            marginBottom: "-0.08em",
+            whiteSpace: "nowrap",
+
+            /* The 5-Stop Chrome Specular Shimmer */
+            backgroundImage: "linear-gradient(110deg, #8aa89c 20%, #f0f0ec 45%, #ffffff 50%, #f0f0ec 55%, #8aa89c 80%)",
+            backgroundSize: "200% 100%",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            animation: "strideShimmer 3.5s linear infinite",
+          }}
+        >
+          stride
+        </div>
       </div>
 
       {/* Bottom row — copyright + legal links */}
       <div
         className="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
         style={{
-          borderTop: "0.5px solid #2a4a3e",
+          borderTop: "1px solid #2a4a3e",
+          maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
           paddingTop: "24px",
           marginTop: "32px",
         }}
