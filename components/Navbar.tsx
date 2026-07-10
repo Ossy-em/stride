@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
 const links = [
@@ -96,8 +97,8 @@ export default function StrideNavbar() {
               {l.name}
             </a>
           ))}
-          <a
-            href="#"
+          <Link
+            href="/signin"
             className="transition-colors duration-500 hover:bg-[#0c2518]"
             style={{
               fontFamily: "'Geist', sans-serif",
@@ -112,7 +113,7 @@ export default function StrideNavbar() {
             }}
           >
             Start a session
-          </a>
+          </Link>
         </div>
 
         {/* Mobile toggle — hidden while scrolling up */}
@@ -193,8 +194,8 @@ export default function StrideNavbar() {
               {l.name}
             </a>
           ))}
-          <a
-            href="#"
+          <Link
+            href="/signin"
             onClick={() => setMenuOpen(false)}
             className="text-center"
             style={{
@@ -210,7 +211,7 @@ export default function StrideNavbar() {
             }}
           >
             Start a session
-          </a>
+          </Link>
         </div>
       </div>
     </header>

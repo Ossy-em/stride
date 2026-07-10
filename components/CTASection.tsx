@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function StrideCTA() {
   return (
     <section
@@ -21,22 +23,24 @@ export default function StrideCTA() {
         Start before you drift.
       </h2>
 
-      <button
-        className="cursor-pointer transition-colors duration-500 hover:bg-[#0c2518]"
-        style={{
-          fontFamily: "'Geist', sans-serif",
-          fontSize: "13px",
-          fontWeight: 400,
-          letterSpacing: "0.01em",
-          color: "#ffffff",
-          background: "#1a1a17",
-          border: "none",
-          padding: "11px 28px",
-          borderRadius: "100px",
-        }}
-      >
-        Start a session
-      </button>
+      <Link href="/signin">
+        <button
+          className="cursor-pointer transition-colors duration-500 hover:bg-[#0c2518]"
+          style={{
+            fontFamily: "'Geist', sans-serif",
+            fontSize: "13px",
+            fontWeight: 400,
+            letterSpacing: "0.01em",
+            color: "#ffffff",
+            background: "#1a1a17",
+            border: "none",
+            padding: "11px 28px",
+            borderRadius: "100px",
+          }}
+        >
+          Start a session
+        </button>
+      </Link>
     </section>
   );
 }
