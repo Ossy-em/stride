@@ -83,14 +83,17 @@ export default function StrideCTA() {
           position: relative;
           overflow: hidden;
           border-radius: var(--radius-tile);
-          background: var(--field-1);
-          padding: 6px;
-          box-shadow: 0 16px 40px rgba(16, 34, 28, 0.16);
+          background: var(--surface);
+          transition: transform var(--dur-slow) var(--ease-out),
+                      box-shadow var(--dur-slow) var(--ease-out);
         }
-        .cta-cell > * {
-          border-radius: calc(var(--radius-tile) - 6px);
-          overflow: hidden;
-          height: 100%;
+        .cta-cell:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 18px 44px rgba(16, 34, 28, 0.08);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .cta-cell { transition: none; }
+          .cta-cell:hover { transform: none; box-shadow: none; }
         }
 
         .a1 { grid-column: 2 / 3; grid-row: 1 / 3; }
