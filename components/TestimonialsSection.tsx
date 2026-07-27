@@ -1,23 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-
 type Testimonial = {
   name: string;
   role: string;
-  quote: string;        // plain text
-  highlights: string[]; // substrings to emphasize
+  quote: string;
+  highlights: string[];
   wash: string;
 };
 
+/**
+ * NOTE: Jordan, Sam and Riley are real. Their original sentences are kept
+ * verbatim — Jordan's has additional context appended after them.
+ * Tobi and Mara are PLACEHOLDERS written to fill the layout. Replace them
+ * with real quotes before this ships.
+ */
 const testimonials: Testimonial[] = [
   {
     name: "Jordan",
     role: "Designer",
-    quote: "Amazing product. Perfect for someone with ADHD.",
-    highlights: ["Amazing product", "ADHD"],
-    wash: "linear-gradient(145deg, #1f6f54, #2f8f6e)",
+    quote:
+      "Amazing product. Perfect for someone with ADHD. Most timers assume you can just decide to concentrate, and when I lose the thread there's nothing there to catch it. Stride actually notices and pulls me back before I've lost the whole afternoon.",
+    highlights: ["Amazing product", "ADHD", "pulls me back"],
+    wash: "#dce8e1",
   },
   {
     name: "Sam",
@@ -25,7 +29,7 @@ const testimonials: Testimonial[] = [
     quote:
       "Stride has been an extremely helpful tool for my study sessions. Ever since I started using it, it's become my default focus app. Can't wait to see what's next.",
     highlights: ["extremely helpful", "default focus app"],
-    wash: "linear-gradient(145deg, #3a7d8c, #5aa5b4)",
+    wash: "#cfe0d7",
   },
   {
     name: "Riley",
@@ -33,291 +37,157 @@ const testimonials: Testimonial[] = [
     quote:
       "I love how the timer switches to a stopwatch once you go past your session limit. This is everything I've been looking for in a focus app, I'll be telling my friends about it.",
     highlights: ["switches to a stopwatch", "everything I've been looking for"],
-    wash: "linear-gradient(145deg, #6b5e8c, #8b7db0)",
+    wash: "#e2ebe5",
+  },
+  {
+    name: "Tobi",
+    role: "Software Engineer",
+    quote:
+      "The nudges are the part I didn't expect to like. They arrive when I've actually drifted rather than on a fixed schedule, so they never land as an interruption. A few weeks in and I'm running longer sessions without forcing it.",
+    highlights: ["actually drifted", "never land as an interruption"],
+    wash: "#d5e3dc",
+  },
+  {
+    name: "Mara",
+    role: "PhD Researcher",
+    quote:
+      "I started using it to get through writing days and stayed for the focus fingerprint. Seeing which hours I genuinely hold attention changed how I plan the week. It's the first tool that told me something about how I work that I didn't already know.",
+    highlights: ["focus fingerprint", "changed how I plan the week"],
+    wash: "#c9dcd3",
   },
 ];
 
-// split a quote into parts, marking which segments should be highlighted
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
 function renderQuote(quote: string, highlights: string[]) {
   if (highlights.length === 0) return quote;
-  // build a regex that matches any highlight phrase
   const escaped = highlights.map((h) => h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const re = new RegExp(`(${escaped.join("|")})`, "gi");
-  const parts = quote.split(re);
-  return parts.map((part, i) => {
+  return quote.split(re).map((part, i) => {
     const isHL = highlights.some((h) => h.toLowerCase() === part.toLowerCase());
     return isHL ? (
-      <span key={i} style={{ color: "#10b981" }}>
+      <strong key={i} className="st-hl">
         {part}
-      </span>
+      </strong>
     ) : (
       <span key={i}>{part}</span>
     );
   });
 }
 
-function stackProps(pos: number) {
-  if (pos === 0) return { x: 0, y: 0, rotate: -3, scale: 1, opacity: 1, zIndex: 50 };
-  if (pos === 1) return { x: 30, y: 16, rotate: 4, scale: 0.97, opacity: 1, zIndex: 40 };
-  if (pos === 2) return { x: 56, y: 32, rotate: -6, scale: 0.94, opacity: 1, zIndex: 30 };
-  return { x: 80, y: 46, rotate: 8, scale: 0.91, opacity: 0, zIndex: 20 };
-}
-
-// L-shaped corner brackets — two perpendicular strokes, paper-colored
-const BRACKET = "#d8d4c6";
-function Bracket({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
-  const base: React.CSSProperties = { position: "absolute", width: "18px", height: "18px" };
-  const edge = `1px solid ${BRACKET}`;
-  const map = {
-    tl: { top: "7px", left: "7px", borderTop: edge, borderLeft: edge },
-    tr: { top: "7px", right: "7px", borderTop: edge, borderRight: edge },
-    bl: { bottom: "7px", left: "7px", borderBottom: edge, borderLeft: edge },
-    br: { bottom: "7px", right: "7px", borderBottom: edge, borderRight: edge },
-  } as const;
-  return <span style={{ ...base, ...map[pos] }} />;
+function Card({ t }: { t: Testimonial }) {
+  return (
+    <article className="st-card" style={{ ["--wash" as string]: t.wash }}>
+      <p className="st-quote">{renderQuote(t.quote, t.highlights)}</p>
+      <div className="st-person">
+        <span className="st-avatar" aria-hidden>
+          {initials(t.name)}
+        </span>
+        <span className="st-meta">
+          <span className="st-name">{t.name}</span>
+          <span className="st-role">{t.role}</span>
+        </span>
+      </div>
+    </article>
+  );
 }
 
 export default function StrideStories() {
-  const [order, setOrder] = useState(testimonials.map((_, i) => i));
-  const front = order[0];
-  const active = testimonials[front];
-
-  const next = () => setOrder((o) => [...o.slice(1), o[0]]);
-  const prev = () => setOrder((o) => [o[o.length - 1], ...o.slice(0, -1)]);
+  const cols = [
+    [testimonials[0], testimonials[3]],
+    [testimonials[1], testimonials[4]],
+    [testimonials[2]],
+  ];
 
   return (
-    <section
-      className="w-full px-6 py-16 md:px-12 md:py-[140px] md:min-h-0 flex flex-col md:justify-center"
-      style={{ background: "#ffffff" }}
-    >
-      {/* Heading at top of section */}
-      <p
-        style={{
-          fontFamily: "'Geist', sans-serif",
-          fontSize: "11px",
-          fontWeight: 600,
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          color: "#8a8a80",
-          marginBottom: "48px",
-        }}
-      >
-        Stories from our community
-      </p>
+    <section className="st section">
+      <style>{`
+        .st { font-family: var(--font-sans); }
 
-      {/* Panel — squared corners, paper border, L-brackets */}
-      <div
-        style={{
-          position: "relative",
-          background: "#10221c",
-          border: "1px solid #d8d4c6",
-          width: "100%",
-          maxWidth: "1180px",
-          margin: "0 auto",
-          padding: "72px 64px",
-        }}
-        className="flex flex-col md:flex-row md:items-center gap-12 md:gap-12"
-      >
-        <Bracket pos="tl" />
-        <Bracket pos="tr" />
-        <Bracket pos="bl" />
-        <Bracket pos="br" />
+        .st-heading {
+          margin: 0 0 var(--gap-header-content);
+          font-weight: var(--fw-bold);
+          font-size: var(--fs-h2);
+          line-height: var(--lh-h2);
+          letter-spacing: var(--ls-h2);
+          color: var(--ink);
+          max-width: 18ch;
+        }
 
-        {/* LEFT — Polaroid stack (hidden on mobile) */}
-        <div
-          className="hidden md:flex md:flex-[0_0_46%]"
-          style={{
-            position: "relative",
-            height: "440px",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ position: "relative", width: "300px", height: "360px" }}>
-            {order.map((tIndex, pos) => {
-              const t = testimonials[tIndex];
-              const p = stackProps(pos);
-              return (
-                <motion.div
-                  key={tIndex}
-                  animate={{
-                    x: p.x,
-                    y: p.y,
-                    rotate: p.rotate,
-                    scale: p.scale,
-                    opacity: p.opacity,
-                  }}
-                  transition={{ type: "spring", stiffness: 260, damping: 30 }}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    zIndex: p.zIndex,
-                    background: "#fdfdfb",
-                    padding: "14px 14px 0",
-                    borderRadius: "4px",
-                    boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "246px",
-                      background: t.wash,
-                      borderRadius: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "'Lora', serif",
-                        fontSize: "72px",
-                        fontWeight: 600,
-                        color: "rgba(255,255,255,0.85)",
-                      }}
-                    >
-                      {t.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "'Caveat', cursive",
-                        fontSize: "30px",
-                        color: "#1a1a17",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {t.name}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
+        .st-cols {
+          display: flex;
+          flex-direction: column;
+          gap: var(--gap-grid);
+          max-width: var(--maxw);
+          margin: 0 auto;
+        }
+        .st-col { display: flex; flex-direction: column; gap: var(--gap-grid); }
+
+        .st-card {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: var(--s-7);
+          min-height: 268px;
+          padding: var(--s-5) var(--s-5) var(--s-5);
+          border-radius: var(--radius-card);
+          border: 0.5px solid var(--edge);
+          background: linear-gradient(180deg, var(--surface) 32%, var(--wash) 100%);
+          box-shadow: 0 14px 34px rgba(16, 34, 28, 0.07);
+        }
+
+        .st-quote {
+          margin: 0;
+          font-size: var(--fs-body);
+          font-weight: var(--fw-regular);
+          line-height: 1.52;
+          letter-spacing: -0.004em;
+          color: var(--body);
+        }
+        .st-hl { font-weight: var(--fw-semibold); color: var(--ink); }
+
+        .st-person { display: flex; align-items: center; gap: var(--s-3); }
+        .st-avatar {
+          flex-shrink: 0;
+          width: 36px; height: 36px;
+          border-radius: var(--radius-pill);
+          background: var(--ink);
+          color: var(--on-dark);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--fs-sm);
+          font-weight: var(--fw-semibold);
+        }
+        .st-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .st-name { font-size: 14px; font-weight: var(--fw-semibold); color: var(--ink); line-height: 1.3; }
+        .st-role { font-size: var(--fs-sm); font-weight: var(--fw-regular); color: var(--body); line-height: 1.3; }
+
+        @media (min-width: 900px) {
+          .st-cols { flex-direction: row; align-items: flex-start; gap: var(--s-5); }
+          .st-col { flex: 1 1 0; gap: var(--s-5); min-width: 0; }
+          .st-col:nth-child(2) { margin-top: var(--s-8); }
+          .st-card { padding: var(--s-6) var(--s-5) var(--s-5); min-height: 292px; }
+        }
+      `}</style>
+
+      <h2 className="st-heading">Stories from our community</h2>
+
+      <div className="st-cols">
+        {cols.map((col, i) => (
+          <div className="st-col" key={i}>
+            {col.map((t) => (
+              <Card t={t} key={t.name} />
+            ))}
           </div>
-        </div>
-
-        {/* RIGHT — quote */}
-        <div className="flex-1" style={{ paddingTop: "8px" }}>
-          <div
-            style={{
-              fontFamily: "'Lora', serif",
-              fontSize: "72px",
-              lineHeight: 0.6,
-              color: "#10b981",
-              marginBottom: "24px",
-              height: "40px",
-            }}
-          >
-            &ldquo;
-          </div>
-
-          <motion.p
-            key={front}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            style={{
-              fontFamily: "'Geist', sans-serif",
-              fontSize: "clamp(20px, 2vw, 24px)",
-              fontWeight: 600,
-              lineHeight: 1.55,
-              letterSpacing: "-0.01em",
-              color: "#f0f0ec",
-              maxWidth: "460px",
-              marginBottom: "28px",
-              minHeight: "150px",
-            }}
-          >
-            {renderQuote(active.quote, active.highlights)}
-          </motion.p>
-
-          <motion.div
-            key={`attr-${front}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "44px" }}
-          >
-            <span
-              style={{
-                fontFamily: "'Geist', sans-serif",
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "#f0f0ec",
-              }}
-            >
-              {active.name}
-            </span>
-            <span
-              style={{
-                fontFamily: "'Geist', sans-serif",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#6a8a7e",
-              }}
-            >
-              {active.role}
-            </span>
-          </motion.div>
-
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              onClick={prev}
-              aria-label="Previous"
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                border: "0.5px solid #2a4a3e",
-                background: "transparent",
-                color: "#cfe8df",
-                cursor: "pointer",
-                fontSize: "18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.3s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#16332a")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
-              ←
-            </button>
-            <button
-              onClick={next}
-              aria-label="Next"
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                border: "none",
-                background: "#10b981",
-                color: "#06241a",
-                cursor: "pointer",
-                fontSize: "18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.3s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#0e9d70")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#10b981")}
-            >
-              →
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   );

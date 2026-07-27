@@ -1,6 +1,6 @@
 "use client";
 
-const footerLinks = [
+const navigation = [
   { name: "Features", href: "#features" },
   { name: "How It Works", href: "#how-it-works" },
   { name: "Pricing", href: "#pricing" },
@@ -8,160 +8,162 @@ const footerLinks = [
   { name: "Contact", href: "mailto:hello@trystrideai.com" },
 ];
 
-// link colors for the dark panel
-const LINK = "#8aa89c";
-const LINK_HOVER = "#f0f0ec";
+const legal = [
+  { name: "Privacy Policy", href: "/privacy" },
+  { name: "Terms", href: "/terms" },
+];
 
 export default function StrideFooter() {
-  const hoverIn = (e: React.MouseEvent<HTMLAnchorElement>) =>
-    (e.currentTarget.style.color = LINK_HOVER);
-  const hoverOut = (e: React.MouseEvent<HTMLAnchorElement>) =>
-    (e.currentTarget.style.color = LINK);
-
   return (
-    <footer
-      className="w-full px-6 md:px-12 pt-16 md:pt-[96px] pb-10"
-      style={{ background: "#10221c", overflow: "hidden" }}
-    >
-      {/* Top row — links + small meta */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10">
-        <nav className="flex flex-wrap gap-x-8 gap-y-3">
-          {footerLinks.map((l) => (
-            <a
-              key={l.name}
-              href={l.href}
-              className="transition-colors duration-300"
-              style={{
-                fontFamily: "'Geist', sans-serif",
-                fontSize: "14px",
-                fontWeight: 400,
-                color: LINK,
-                textDecoration: "none",
-              }}
-              onMouseEnter={hoverIn}
-              onMouseLeave={hoverOut}
-            >
-              {l.name}
-            </a>
-          ))}
-        </nav>
-
-        <div
-          className="text-left md:text-right"
-          style={{
-            fontFamily: "'Geist', sans-serif",
-            fontSize: "13px",
-            fontWeight: 300,
-            color: "#6a8a7e",
-            lineHeight: 1.6,
-          }}
-        >
-          <p>Focus intelligence</p>
-          <p>Est. 2026 ©</p>
-        </div>
-      </div>
-
+    <footer className="ft">
       <style>{`
-        @keyframes strideShimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: 0% 0; }
+        .ft {
+          width: 100%;
+          box-sizing: border-box;
+          background: var(--field-1);
+          border-radius: 32px 32px 0 0;
+          overflow: hidden;
+          padding: 36px var(--gutter) 18px;
+          font-family: var(--font-sans);
         }
+
+        /* ---- columns ---- */
+        .ft-cols {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 28px var(--s-5);
+          margin-bottom: var(--s-6);
+        }
+        .ft-col-head {
+          margin: 0 0 var(--s-4);
+          font-size: var(--fs-sm);
+          font-weight: var(--fw-semibold);
+          line-height: 1.3;
+          color: var(--on-dark);
+        }
+        .ft-statement {
+          margin: 0 0 var(--s-3);
+          font-size: var(--fs-sm);
+          font-weight: var(--fw-regular);
+          line-height: 1.45;
+          color: var(--on-dark-body);
+          max-width: 26ch;
+        }
+        .ft-statement:last-child { margin-bottom: 0; }
+
+        .ft-list { display: flex; flex-direction: column; gap: 9px; }
+        .ft-link {
+          font-size: var(--fs-sm);
+          font-weight: var(--fw-regular);
+          line-height: 1.3;
+          color: var(--on-dark-body);
+          text-decoration: none;
+          width: fit-content;
+          transition: color var(--dur) ease;
+        }
+        .ft-link:hover { color: var(--on-dark); }
+        .ft-link:focus-visible {
+          outline: 2px solid var(--on-dark);
+          outline-offset: 3px;
+          border-radius: 2px;
+        }
+
+        /* ---- wordmark: flush left, fills the measure ---- */
+        .ft-mark {
+          display: block;
+          margin: 0 0 -0.05em;
+          font-family: var(--font-serif);
+          font-weight: 700;
+          font-size: clamp(80px, 30vw, 470px);
+          line-height: 0.74;
+          letter-spacing: -0.05em;
+          white-space: nowrap;
+          color: var(--on-dark);
+          user-select: none;
+        }
+
+        /* ---- centred legal ---- */
+        .ft-base {
+          text-align: center;
+          padding-top: var(--s-4);
+          border-top: 0.5px solid var(--on-dark-rule);
+          margin-top: var(--s-5);
+        }
+        .ft-base p {
+          margin: 0;
+          font-size: var(--fs-xs);
+          font-weight: var(--fw-regular);
+          line-height: 1.6;
+          color: var(--on-dark-quiet);
+        }
+
+        @media (min-width: 768px) {
+          .ft {
+            border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+            padding: 44px var(--gutter) 20px;
+          }
+          .ft-cols {
+            grid-template-columns: 1.4fr 1fr 1fr 1.3fr;
+            gap: var(--s-7);
+            margin-bottom: var(--s-7);
+          }
+          .ft-mark { font-size: clamp(80px, 28vw, 470px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) { .ft-link { transition: none; } }
       `}</style>
 
-      {/* Giant wordmark container */}
-      <div className="relative select-none pointer-events-none mt-10 md:mt-12">
-        
-        {/* The Ambient Light Pool (Behind the text) */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75%] h-[55%] -z-10 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse at center, rgba(138, 168, 156, 0.18) 0%, rgba(16, 34, 28, 0) 70%)",
-            filter: "blur(24px)",
-          }}
-        />
+      <div className="ft-cols">
+        <div>
+          <p className="ft-col-head">Focus intelligence</p>
+          <p className="ft-statement">
+            Most focus tools run on a fixed timer. Stride reads the rhythm of
+            your attention instead.
+          </p>
+          <p className="ft-statement">It gets sharper the longer you use it.</p>
+        </div>
 
-        {/* The Text */}
-        <div
-          aria-hidden
-          style={{
-            fontFamily: "'Lora', serif",
-            fontWeight: 600,
-            fontSize: "clamp(96px, 26vw, 460px)",
-            lineHeight: 0.78, // Tightened to pull the text up into Lora's empty ascender space
-            letterSpacing: "-0.04em",
-            marginBottom: "-0.08em",
-            whiteSpace: "nowrap",
+        <div>
+          <p className="ft-col-head">Navigation</p>
+          <div className="ft-list">
+            {navigation.map((l) => (
+              <a className="ft-link" key={l.name} href={l.href}>
+                {l.name}
+              </a>
+            ))}
+          </div>
+        </div>
 
-            /* The 5-Stop Chrome Specular Shimmer */
-            backgroundImage: "linear-gradient(110deg, #8aa89c 20%, #f0f0ec 45%, #ffffff 50%, #f0f0ec 55%, #8aa89c 80%)",
-            backgroundSize: "200% 100%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            animation: "strideShimmer 3.5s linear infinite",
-          }}
-        >
-          stride
+        <div>
+          <p className="ft-col-head">Legal</p>
+          <div className="ft-list">
+            {legal.map((l) => (
+              <a className="ft-link" key={l.name} href={l.href}>
+                {l.name}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="ft-col-head">Contact</p>
+          <div className="ft-list">
+            <a className="ft-link" href="mailto:hello@trystrideai.com">
+              hello@trystrideai.com
+            </a>
+          </div>
+          <p className="ft-statement" style={{ marginTop: "14px" }}>
+            Est. 2026 ©
+          </p>
         </div>
       </div>
 
-      {/* Bottom row — copyright + legal links */}
-      <div
-        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-        style={{
-          borderTop: "1px solid #2a4a3e",
-          maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
-          paddingTop: "24px",
-          marginTop: "32px",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Geist', sans-serif",
-            fontSize: "12px",
-            fontWeight: 300,
-            color: "#6a8a7e",
-          }}
-        >
-          © {new Date().getFullYear()} Stride. All rights reserved.
-        </span>
+      <span className="ft-mark" aria-hidden>
+        stride
+      </span>
 
-        <div
-          className="flex items-center gap-6"
-          style={{
-            fontFamily: "'Geist', sans-serif",
-            fontSize: "12px",
-            fontWeight: 300,
-          }}
-        >
-          <a
-            href="/privacy"
-            className="transition-colors duration-300"
-            style={{ color: LINK, textDecoration: "none" }}
-            onMouseEnter={hoverIn}
-            onMouseLeave={hoverOut}
-          >
-            Privacy Policy
-          </a>
-          <a
-            href="/terms"
-            className="transition-colors duration-300"
-            style={{ color: LINK, textDecoration: "none" }}
-            onMouseEnter={hoverIn}
-            onMouseLeave={hoverOut}
-          >
-            Terms
-          </a>
-          <a
-            href="mailto:hello@trystrideai.com"
-            className="transition-colors duration-300"
-            style={{ color: LINK, textDecoration: "none" }}
-            onMouseEnter={hoverIn}
-            onMouseLeave={hoverOut}
-          >
-            hello@trystrideai.com
-          </a>
-        </div>
+      <div className="ft-base">
+        <p>© {new Date().getFullYear()} Stride. All rights reserved.</p>
       </div>
     </footer>
   );

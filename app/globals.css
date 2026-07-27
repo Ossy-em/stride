@@ -282,3 +282,166 @@ input[type="range"]::-moz-range-thumb:hover {
 .dark .text-secondary {
   color: #9CA3AF;
 }
+
+
+/**
+ * Stride design tokens — single source of truth.
+ * Import once in app/layout.tsx:  import "./tokens.css";
+ *
+ * Every section should reference these. If a section needs a value that
+ * isn't here, that's the signal to add it here rather than inline it.
+ */
+
+:root {
+  /* ---------------------------------------------------------------
+     COLOUR — light ground (body of the page)
+     --------------------------------------------------------------- */
+  --ground: #f7faf8; /* page ground — cool off-white, whisper of brand */
+  --surface: #ffffff; /* cards, panels, screens sit on the ground */
+  --ink: #10221c; /* headings, primary text, filled buttons */
+  --body: #48645b; /* paragraphs, secondary text */
+  --quiet: #7c9389; /* meta, numerals, placeholders */
+  --rule: #dfe4e0; /* borders, hairlines */
+  --edge: #eef1ed; /* internal dividers, empty slots */
+  --rule-hover: #cbd8d1; /* border on hover */
+
+  /* COLOUR — dark ground (hero field core, CTA, footer band) */
+  --on-dark: #f0f0ec;
+  --on-dark-body: #8aa89c;
+  --on-dark-quiet: #6a8a7e;
+  --on-dark-rule: #2a4a3e;
+  --on-dark-slot: #16302a;
+
+  /* COLOUR — green field ramp, deepest to palest.
+     Gradients pull from this ramp only. */
+  --field-1: #10221c;
+  --field-2: #2f5648;
+  --field-3: #48645b;
+  --field-4: #7c9389;
+  --field-5: #b4c5bd;
+  --field-6: #dfe4e0;
+
+  /* ---------------------------------------------------------------
+     TYPE — Geist everywhere. Lora is the wordmark only.
+     Each step carries its own line-height and tracking. Tracking
+     tightens as size grows; never mix a size with another's tracking.
+     --------------------------------------------------------------- */
+  --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+  --font-serif: "Lora", serif;
+
+  /* display — hero h1 only */
+  --fs-display: clamp(40px, 6vw, 84px);
+  --lh-display: 1;
+  --ls-display: -0.04em;
+
+  /* h1 — statement sections (About, CTA) */
+  --fs-h1: clamp(32px, 4.6vw, 56px);
+  --lh-h1: 1.05;
+  --ls-h1: -0.032em;
+
+  /* h2 — section headings (How It Works, Testimonials, FAQ, Pricing) */
+  --fs-h2: clamp(28px, 3.6vw, 44px);
+  --lh-h2: 1.08;
+  --ls-h2: -0.028em;
+
+  /* h3 — column titles */
+  --fs-h3: 19px;
+  --lh-h3: 1.26;
+  --ls-h3: -0.012em;
+
+  /* h4 — card titles, accordion questions */
+  --fs-h4: 15px;
+  --lh-h4: 1.35;
+  --ls-h4: -0.01em;
+
+  /* body ramp — four steps, no others */
+  --fs-lead: clamp(16px, 1.6vw, 19px); /* hero sub, section lead */
+  --lh-lead: 1.5;
+  --ls-lead: -0.01em;
+
+  --fs-body: 15px; /* paragraphs, quotes, answers */
+  --lh-body: 1.55;
+
+  --fs-sm: 13px; /* nav, meta, roles, footer links */
+  --lh-sm: 1.5;
+
+  --fs-xs: 12px; /* legal, slot labels */
+  --lh-xs: 1.5;
+
+  /* weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ---------------------------------------------------------------
+     SPACE — 8px base
+     --------------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 40px;
+  --s-8: 56px;
+  --s-9: 72px;
+  --s-10: 96px;
+  --s-11: 128px;
+
+  /* stacking inside a section */
+  --gap-heading-body: var(--s-5); /* h → its paragraph */
+  --gap-body-action: var(--s-6); /* paragraph → button */
+  --gap-header-content: var(--s-8); /* section header → content block */
+  --gap-grid: var(--s-5); /* between cards / columns */
+
+  /* ---------------------------------------------------------------
+     LAYOUT
+     --------------------------------------------------------------- */
+  --gutter: 24px;
+  --maxw: 1180px;
+
+  /* section rhythm — symmetric, so the gap between any two
+     sections is 2 × --section-y. Change here, not per section. */
+  --section-y: 64px;
+  --section-y-tight: 44px; /* short statement sections */
+
+  --radius-card: 16px;
+  --radius-tile: 14px;
+  --radius-panel: 40px;
+  --radius-pill: 999px;
+
+  /* ---------------------------------------------------------------
+     MOTION
+     --------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 260ms;
+  --dur-slow: 400ms;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 48px;
+    --section-y: 96px;
+    --section-y-tight: 64px;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Base section scaffold. Sections opt in with class="section".
+   --------------------------------------------------------------- */
+.section {
+  width: 100%;
+  background: var(--ground);
+  padding: var(--section-y) var(--gutter);
+  font-family: var(--font-sans);
+}
+.section--tight {
+  padding-top: var(--section-y-tight);
+  padding-bottom: var(--section-y-tight);
+}
+.section__inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+}

@@ -1,182 +1,150 @@
 "use client";
 
-const cards = [
+import Button from "@/components/ui/Button";
+
+const Bell = () => (
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <rect x="1" y="1" width="30" height="30" rx="9" stroke="currentColor" strokeWidth="1.25" />
+    <path
+      d="M11 20h10m-9-1v-4.5a4 4 0 0 1 8 0V19m-5 3.5h2"
+      stroke="currentColor"
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const Spark = () => (
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <rect x="1" y="1" width="30" height="30" rx="9" stroke="currentColor" strokeWidth="1.25" />
+    <path
+      d="M16 9c0 3.5 3.5 7 7 7-3.5 0-7 3.5-7 7 0-3.5-3.5-7-7-7 3.5 0 7-3.5 7-7Z"
+      stroke="currentColor"
+      strokeWidth="1.25"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const Fingerprint = () => (
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <rect x="1" y="1" width="30" height="30" rx="9" stroke="currentColor" strokeWidth="1.25" />
+    <path
+      d="M16 22.5v-6.75m-3.25 6v-6a3.25 3.25 0 0 1 6.5 0v6M9.5 20v-4.25a6.5 6.5 0 0 1 13 0V20"
+      stroke="currentColor"
+      strokeWidth="1.25"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const columns = [
   {
-    index: "01",
-    title: "Start a Session",
-    body: "Begin a focused work session with a clear goal and timer. Stride helps you stay on track, reduce distractions, and build consistent deep work habits from start to finish.",
+    Icon: Bell,
+    title: "Gentle nudges that keep you engaged",
+    body: "Reminders arrive when your attention starts to drift, and bring you back without interrupting your workflow or breaking momentum.",
   },
   {
-    index: "02",
-    title: "Nudges",
-    body: "Gentle reminders that keep you engaged when your attention starts to drift. Nudges help you refocus without interrupting your workflow or breaking momentum.",
+    Icon: Spark,
+    title: "Real-time support that learns how you work",
+    body: "Interventions are powered by your focus data and behavior patterns. As Stride learns how you work, it delivers personalized suggestions and timely interventions to help you overcome distractions and maintain momentum.",
   },
   {
-    index: "03",
-    title: "Smart Interventions",
-    body: "Real-time support powered by your focus data and behavior patterns. As Stride learns how you work, it delivers personalized suggestions and timely interventions to help you overcome distractions, stay productive, and maintain momentum.",
-  },
-  {
-    index: "04",
-    title: "Your Focus Fingerprint",
-    body: "A personalized view of your focus patterns, habits, strengths, and challenges. It helps you understand how you work best and improve productivity over time.",
+    Icon: Fingerprint,
+    title: "A personalized view of your focus patterns",
+    body: "Your focus fingerprint gathers your patterns, habits, strengths, and challenges in one place. It helps you understand how you work best and improve productivity over time.",
   },
 ];
 
 export default function StrideHowItWorks() {
   return (
-    <section
-      className="w-full px-6 pt-4 pb-16 md:px-12 md:pt-16 md:pb-[140px] flex flex-col"
-      style={{ background: "#ffffff" }}
-    >
-      {/* Top statement — full width, Lora (hero font), slightly smaller */}
-      <p
-        style={{
-          fontFamily: "'Lora', serif",
-          fontSize: "clamp(22px, 2.8vw, 36px)",
-          fontWeight: 500,
-          lineHeight: 1.22,
-          letterSpacing: "-0.02em",
-          color: "#1a1a17",
-          marginBottom: "64px",
-        }}
-      >
-        Stride builds your focus fingerprint and uses it to help you stay on
-        track, adapting to your unique rhythms. It learns from every session you
-        run, capturing when you drift, what pulls you back, and how your
-        attention moves across a day.
-      </p>
+    <section className="hiw section" id="how-it-works">
+      <style>{`
+        .hiw { font-family: var(--font-sans); }
+        .hiw-inner { max-width: var(--maxw); margin: 0 auto; }
 
-      {/* Split row: 65% cards | 8% gap | 27% why-different */}
-      <div className="flex flex-col md:flex-row md:flex-nowrap md:items-stretch" style={{ gap: "8%" }}>
-        {/* LEFT — cards: 2 cols mobile, 4 cols desktop */}
-        <div style={{ flexBasis: "65%", flexGrow: 0, flexShrink: 0, minWidth: 0 }}>
-          <div
-            className="stride-cards-grid"
-            style={{
-              display: "grid",
-              borderTop: "0.5px solid #e6e6de",
-              borderLeft: "0.5px solid #e6e6de",
-            }}
-          >
-            <style>{`
-              .stride-cards-grid { grid-template-columns: repeat(2, 1fr); }
-              @media (min-width: 768px) {
-                .stride-cards-grid { grid-template-columns: repeat(4, 1fr); }
-              }
-            `}</style>
-            {cards.map((card) => (
-              <div
-                key={card.index}
-                style={{
-                  padding: "24px 22px 32px",
-                  borderRight: "0.5px solid #e6e6de",
-                  borderBottom: "0.5px solid #e6e6de",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                {/* Top row — number + title together */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: "10px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "'Geist', sans-serif",
-                      fontSize: "11px",
-                      fontWeight: 300,
-                      letterSpacing: "0.16em",
-                      color: "#8a8a80",
-                    }}
-                  >
-                    {card.index}
-                  </span>
-                  <h3
-                    style={{
-                      fontFamily: "'Lora', serif",
-                      fontWeight: 500,
-                      fontSize: "18px",
-                      lineHeight: 1.2,
-                      letterSpacing: "-0.01em",
-                      color: "#1a1a17",
-                    }}
-                  >
-                    {card.title}
-                  </h3>
-                </div>
+        .hiw-top {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--s-6);
+          margin-bottom: var(--gap-header-content);
+        }
+        .hiw-heading {
+          margin: 0;
+          font-weight: var(--fw-bold);
+          font-size: var(--fs-h2);
+          line-height: var(--lh-h2);
+          letter-spacing: var(--ls-h2);
+          color: var(--ink);
+          max-width: 20ch;
+          text-wrap: balance;
+        }
 
-                <p
-                  style={{
-                    fontFamily: "'Geist', sans-serif",
-                    fontSize: "15px",
-                    fontWeight: 400,
-                    lineHeight: 1.65,
-                    color: "#5a5a50",
-                  }}
-                >
-                  {card.body}
-                </p>
-              </div>
-            ))}
-          </div>
+        .hiw-cols {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--s-7);
+        }
+
+        .hiw-col-icon {
+          width: 32px;
+          height: 32px;
+          margin-bottom: var(--s-7);
+          color: var(--ink);
+        }
+        .hiw-col-icon svg { width: 100%; height: 100%; display: block; }
+
+        .hiw-col-title {
+          margin: 0 0 var(--s-5);
+          font-weight: var(--fw-bold);
+          font-size: var(--fs-h3);
+          line-height: var(--lh-h3);
+          letter-spacing: var(--ls-h3);
+          color: var(--ink);
+          max-width: 22ch;
+        }
+        .hiw-col-body {
+          margin: 0;
+          font-weight: var(--fw-regular);
+          font-size: var(--fs-body);
+          line-height: var(--lh-body);
+          color: var(--body);
+        }
+
+        @media (min-width: 768px) {
+          .hiw-top {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--s-7);
+          }
+          .hiw-cols { grid-template-columns: repeat(3, 1fr); gap: 4%; }
+        }
+      `}</style>
+
+      <div className="hiw-inner">
+        <div className="hiw-top">
+          <h2 className="hiw-heading">
+            Most focus tools run on a fixed timer. Stride reads the rhythm of
+            your attention instead.
+          </h2>
+          <Button href="/signin" size="md">
+            Start a session
+          </Button>
         </div>
 
-        {/* RIGHT — why we're different, 27%, hidden on mobile */}
-        <div
-          className="hidden md:flex"
-          style={{
-            flex: "1 1 0%",
-            minWidth: 0,
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "'Geist', sans-serif",
-              fontSize: "13px",
-              fontWeight: 400,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              color: "#8a8a80",
-              marginBottom: "20px",
-            }}
-          >
-            Why Stride is different
-          </p>
-
-          <p
-            style={{
-              fontFamily: "'Geist', sans-serif",
-              fontSize: "15px",
-              fontWeight: 400,
-              lineHeight: 1.6,
-              color: "#1a1a17",
-              marginBottom: "18px",
-            }}
-          >
-            Most focus tools run on a fixed timer. The same twenty-five minutes
-            for everyone, no matter what you're doing.
-          </p>
-
-          <p
-            style={{
-              fontFamily: "'Geist', sans-serif",
-              fontSize: "15px",
-              fontWeight: 400,
-              lineHeight: 1.65,
-              color: "#5a5a50",
-            }}
-          >
-            Stride reads the rhythm of your attention instead, stepping in when
-            your focus actually starts to fray and getting sharper the longer
-            you use it.
-          </p>
+        <div className="hiw-cols">
+          {columns.map(({ Icon, title, body }) => (
+            <div key={title}>
+              <div className="hiw-col-icon">
+                <Icon />
+              </div>
+              <h3 className="hiw-col-title">{title}</h3>
+              <p className="hiw-col-body">{body}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

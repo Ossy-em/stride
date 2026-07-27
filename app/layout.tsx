@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Providers } from './providers'
-import { Inter, Syne } from 'next/font/google'
+import { Inter, Syne, Lora } from 'next/font/google'
+import { GeistSans } from 'geist/font/sans'
 import IOSInstallPrompt from '@/components/shared/IOSInstallPrompt';
 import FeedbackButton from '@/components/shared/FeedbackButton';
+import Button, { ButtonStyles } from '@/components/ui/Button'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const syne = Syne({ subsets: ['latin'], variable: '--font-syne' })
+const syne  = Syne({ subsets: ['latin'], variable: '--font-syne' })
+const lora  = Lora({ subsets: ['latin'], weight: ['500','600'], variable: '--font-lora' })
 
 export const metadata: Metadata = {
   title: 'Stride',
@@ -63,7 +66,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${syne.variable} font-sans`}>
+      <body className={`${inter.variable} ${syne.variable} ${lora.variable} ${GeistSans.variable} font-sans`}>
+        <ButtonStyles />
         <Providers>{children}</Providers>
         <IOSInstallPrompt />
         <FeedbackButton />
@@ -71,3 +75,5 @@ export default function RootLayout({
     </html>
   )
 }
+
+

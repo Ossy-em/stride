@@ -1,6 +1,5 @@
 'use client';
 
-import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import BentoFeatures from '../components/BentoFeatures';
 import FeatureSections from '../components/FeatureSections';
@@ -13,15 +12,12 @@ import Footer from '../components/Footer';
 export default function StrideLandingPage() {
   return (
    <main className="bg-white text-gray-900 overflow-x-clip">
-      <Navbar />
       <HeroSection />
       <BentoFeatures />
-      <FeatureSections />
-      
-      
+      <FeatureSections />  
       <TestimonialsSection />
       {/* <PricingSection /> */}
-      {/* <FAQSection /> */}
+      <FAQSection />
       <CTASection />
       <Footer />
     </main>
