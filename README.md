@@ -60,13 +60,13 @@ The pattern analysis runs through Claude as the reasoning engine, processing you
 
 ```
 stride/
-├── app/                  # Next.js app router pages
-├── components/           # React components
-├── lib/                  # Core logic
-│   ├── ai/               # Claude integration, prediction engine
-│   ├── supabase/         # Database client and queries
-│   └── opik/             # Observability and logging
-├── types/                # TypeScript type definitions
+├── src/
+│   ├── app/              # Next.js app router pages
+│   ├── components/       # React components
+│   ├── lib/              # Core logic
+│   ├── remotion/         # Remotion video compositions
+│   ├── types/            # TypeScript type definitions
+│   └── proxy.ts          # Next.js proxy
 └── public/               # Static assets
 ```
 
