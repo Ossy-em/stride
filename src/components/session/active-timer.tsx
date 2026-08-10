@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, BellOff } from 'lucide-react';
-import CheckInModal from './CheckInModal';
-import InterventionNotification from './InterventionNotification';
-import FirstSessionOverlay from './FirstSessionOverlay';
+import CheckInModal from './check-in-modal';
+import InterventionNotification from './intervention-notification';
+import FirstSessionOverlay from './first-session-overlay';
 import { setupPushNotifications, type PushSetupResult } from '@/lib/push-subscription';
-import Button from '@/components/ui/Button';
+import Button from '@/components/ui/button';
 
 interface ActiveTimerProps {
   sessionId: string;

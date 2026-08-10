@@ -1,13 +1,13 @@
 'use client';
 
-import HeroSection from '../components/HeroSection';
-import BentoFeatures from '../components/BentoFeatures';
-import FeatureSections from '../components/FeatureSections';
-import TestimonialsSection from '../components/TestimonialsSection';
-import PricingSection from '../components/PricingSection';
-import FAQSection from '../components/FAQSection';
-import CTASection from '../components/CTASection';
-import Footer from '../components/Footer';
+import HeroSection from '../components/hero-section';
+import BentoFeatures from '../components/bento-features';
+import FeatureSections from '../components/feature-sections';
+import TestimonialsSection from '../components/testimonials-section';
+import PricingSection from '../components/pricing-section';
+import FAQSection from '../components/faq-section';
+import CTASection from '../components/cta-section';
+import Footer from '../components/footer';
 
 export default function StrideLandingPage() {
   return (

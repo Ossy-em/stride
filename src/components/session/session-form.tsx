@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import UpgradePrompt from '@/components/shared/UpgradePrompt';
+import UpgradePrompt from '@/components/shared/upgrade-prompt';
 
 type TaskType = 'writing' | 'reading' | 'coding';
 

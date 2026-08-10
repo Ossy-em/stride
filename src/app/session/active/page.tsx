@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
-import ActiveTimer from '../../../components/session/ActiveTimer';
+import ActiveTimer from '../../../components/session/active-timer';
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;

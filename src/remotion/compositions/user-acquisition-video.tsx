@@ -1,11 +1,11 @@
 import React from "react";
 import { Sequence, useCurrentFrame, interpolate } from "remotion";
 import { theme } from "../lib/theme";
-import { HookScene } from "../components/scenes/HookScene";
-import { StruggleScene } from "../components/scenes/StruggleScene";
-import { CompanionRevealScene } from "../components/scenes/CompanionRevealScene";
-import { TransformationScene } from "../components/scenes/TransformationScene";
-import { CTAScene } from "../components/scenes/CTAScene";
+import { HookScene } from "../components/scenes/hook-scene";
+import { StruggleScene } from "../components/scenes/struggle-scene";
+import { CompanionRevealScene } from "../components/scenes/companion-reveal-scene";
+import { TransformationScene } from "../components/scenes/transformation-scene";
+import { CTAScene } from "../components/scenes/cta-scene";
 
 const SceneTransition: React.FC<{
   children: React.ReactNode;

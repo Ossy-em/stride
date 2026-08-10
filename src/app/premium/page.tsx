@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wordmark } from '@/components/ui/Wordmark';
+import { Wordmark } from '@/components/ui/wordmark';
 import {
   ArrowLeft,
   Check,

@@ -4,7 +4,7 @@ import { User, LogOut } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Wordmark } from '@/components/ui/Wordmark';
+import { Wordmark } from '@/components/ui/wordmark';
 
 interface HeaderProps {
   showNav?: boolean;

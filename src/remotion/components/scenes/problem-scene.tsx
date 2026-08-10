@@ -7,7 +7,7 @@ import {
   Sequence,
 } from "remotion";
 import { theme } from "../../lib/theme";
-import { AnimatedText } from "../AnimatedText";
+import { AnimatedText } from "../animated-text";
 
 interface NotificationProps {
   delay: number;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Coffee, Zap, ArrowRight, MessageCircle, Sparkles, Brain, Battery, Waves, Volume2, Check } from 'lucide-react';
-import BreakOverlay from './BreakOverlay';
+import BreakOverlay from './break-overlay';
 
 type FocusState = 'focused' | 'drifting' | 'lost';
 type DriftReason = 'mind_wandering' | 'feeling_stuck' | 'tired' | 'external';

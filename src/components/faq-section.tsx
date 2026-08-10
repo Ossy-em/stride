@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { fadeInUp, staggerContainer } from "./animations";
-import Button from "./ui/Button";
+import Button from "./ui/button";
 
 const faqs = [
   {

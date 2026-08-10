@@ -1,16 +1,16 @@
 // Scene components
-export { ProblemScene } from "./scenes/ProblemScene";
-export { IntroScene } from "./scenes/IntroScene";
-export { HowItWorksScene } from "./scenes/HowItWorksScene";
-export { TechStackScene } from "./scenes/TechStackScene";
-export { ResultsScene } from "./scenes/ResultsScene";
-export { HookScene } from "./scenes/HookScene";
-export { StruggleScene } from "./scenes/StruggleScene";
-export { CompanionRevealScene } from "./scenes/CompanionRevealScene";
-export { TransformationScene } from "./scenes/TransformationScene";
-export { CTAScene } from "./scenes/CTAScene";
+export { ProblemScene } from "./scenes/problem-scene";
+export { IntroScene } from "./scenes/intro-scene";
+export { HowItWorksScene } from "./scenes/how-it-works-scene";
+export { TechStackScene } from "./scenes/tech-stack-scene";
+export { ResultsScene } from "./scenes/results-scene";
+export { HookScene } from "./scenes/hook-scene";
+export { StruggleScene } from "./scenes/struggle-scene";
+export { CompanionRevealScene } from "./scenes/companion-reveal-scene";
+export { TransformationScene } from "./scenes/transformation-scene";
+export { CTAScene } from "./scenes/cta-scene";
 
 // Reusable components
-export { AnimatedText } from "./AnimatedText";
-export { CompanionInterface } from "./CompanionInterface";
-export { StrideLogo } from "./StrideLogo";
+export { AnimatedText } from "./animated-text";
+export { CompanionInterface } from "./companion-interface";
+export { StrideLogo } from "./stride-logo";

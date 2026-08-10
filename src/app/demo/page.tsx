@@ -1,5 +1,5 @@
 
-import ABTestDashboard from '../../components/ABTestDashboard';
+import ABTestDashboard from '../../components/ab-test-dashboard';
 import Link from 'next/link';
 import { BarChart, Activity, Target } from 'lucide-react';
 

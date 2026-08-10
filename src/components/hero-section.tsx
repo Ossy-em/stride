@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Button from "./ui/Button";
+import Button from "./ui/button";
 
 const navLinks = [
   { name: "Features", href: "#features" },
@@ -31,22 +31,33 @@ export default function StrideHero() {
           font-family: var(--font-sans);
         }
 
-        /* ---- contained centre bloom ---- */
-        .hero-field {
+        /* ---- large organic background shape ---- */
+        .hero-shape {
           position: absolute;
-          inset: 0;
+          top: 50%;
+          left: 50%;
+          /* Increased to 140vw to intentionally bleed off edges on mobile */
+          width: 140vw;
+          height: 140vw;
+          max-width: 800px;
+          max-height: 800px;
           z-index: 0;
           pointer-events: none;
-          filter: blur(70px);
-          background:
-            radial-gradient(28% 24% at 50% 44%, rgba(16, 34, 28, 0.55) 0%, transparent 72%),
-            radial-gradient(42% 36% at 50% 46%, rgba(47, 86, 72, 0.50) 0%, transparent 76%),
-            radial-gradient(58% 50% at 50% 48%, rgba(72, 100, 91, 0.36) 0%, transparent 80%);
-          animation: fieldDrift 24s ease-in-out infinite alternate;
+          background-color: rgba(47, 86, 72, 0.15); 
+          border-radius: 43% 57% 65% 35% / 45% 55% 45% 55%;
+          transform: translate(-50%, -50%) rotate(0deg);
+          animation: morphShape 18s ease-in-out infinite alternate;
         }
-        @keyframes fieldDrift {
-          0%   { transform: scale(1) translate3d(0, 0, 0); }
-          100% { transform: scale(1.06) translate3d(-1%, 1%, 0); }
+
+        @keyframes morphShape {
+          0% {
+            border-radius: 43% 57% 65% 35% / 45% 55% 45% 55%;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+          }
+          100% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            transform: translate(-50%, -50%) rotate(15deg) scale(1.05);
+          }
         }
 
         /* ---- nav ---- */
@@ -93,11 +104,12 @@ export default function StrideHero() {
         .hero-h1 {
           margin: 0 0 var(--s-5);
           font-weight: var(--fw-bold);
-          font-size: var(--fs-h1);
-          line-height: var(--lh-h1);
-          letter-spacing: var(--ls-h1);
+          /* Reduced the floor of the clamp from 3rem to 2.25rem for mobile */
+          font-size: clamp(2.25rem, 5vw + 1rem, 5.5rem); 
+          line-height: 1.1; /* Slightly looser line-height for mobile wrapping */
+          letter-spacing: -0.03em;
           color: var(--ink);
-          max-width: 16ch;
+          max-width: 14ch;
           text-wrap: balance;
         }
 
@@ -132,12 +144,10 @@ export default function StrideHero() {
         .hero-rail-item p { margin: 0; color: var(--ink); font-weight: var(--fw-medium); }
 
         @media (min-width: 768px) {
-          .hero-field {
-            filter: blur(90px);
-            background:
-              radial-gradient(22% 26% at 50% 46%, rgba(16, 34, 28, 0.58) 0%, transparent 72%),
-              radial-gradient(34% 40% at 50% 48%, rgba(47, 86, 72, 0.52) 0%, transparent 76%),
-              radial-gradient(48% 54% at 50% 50%, rgba(72, 100, 91, 0.38) 0%, transparent 80%);
+          .hero-shape {
+            /* Restores the contained shape layout on wider screens */
+            width: 70vw;
+            height: 70vw;
           }
 
           .hero-nav { padding: 26px var(--gutter); }
@@ -151,11 +161,11 @@ export default function StrideHero() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .hero-field { animation: none; }
+          .hero-shape { animation: none; }
         }
       `}</style>
 
-      <div className="hero-field" aria-hidden />
+      <div className="hero-shape" aria-hidden />
 
       <nav className="hero-nav">
         <Link href="/" className="hero-wordmark">

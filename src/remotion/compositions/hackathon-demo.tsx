@@ -1,11 +1,11 @@
 import React from "react";
 import { Sequence, useCurrentFrame, interpolate } from "remotion";
 import { theme } from "../lib/theme";
-import { ProblemScene } from "../components/scenes/ProblemScene";
-import { IntroScene } from "../components/scenes/IntroScene";
-import { HowItWorksScene } from "../components/scenes/HowItWorksScene";
-import { TechStackScene } from "../components/scenes/TechStackScene";
-import { ResultsScene } from "../components/scenes/ResultsScene";
+import { ProblemScene } from "../components/scenes/problem-scene";
+import { IntroScene } from "../components/scenes/intro-scene";
+import { HowItWorksScene } from "../components/scenes/how-it-works-scene";
+import { TechStackScene } from "../components/scenes/tech-stack-scene";
+import { ResultsScene } from "../components/scenes/results-scene";
 
 // Transition component for smooth scene changes
 const SceneTransition: React.FC<{

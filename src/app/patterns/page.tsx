@@ -6,13 +6,13 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Lock, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import type { FocusFingerprintData } from '@/types';
-import PeakHoursCard from '@/components/patterns/PeakHoursCard';
-import DriftPatternCard from '@/components/patterns/DriftPatternCard';
-import DiscoveriesCard from '@/components/patterns/DiscoveriesCard';
-import GrowthCard from '@/components/patterns/GrowthCard';
-import DayBreakdownCard from '@/components/patterns/DayBreakdownCard';
-import UpgradePrompt from '@/components/shared/UpgradePrompt';
-import { Spinner } from '@/components/ui/Spinner';
+import PeakHoursCard from '@/components/patterns/peak-hours-card';
+import DriftPatternCard from '@/components/patterns/drift-pattern-card';
+import DiscoveriesCard from '@/components/patterns/discoveries-card';
+import GrowthCard from '@/components/patterns/growth-card';
+import DayBreakdownCard from '@/components/patterns/day-breakdown-card';
+import UpgradePrompt from '@/components/shared/upgrade-prompt';
+import { Spinner } from '@/components/ui/spinner';
 
 interface InsufficientDataResponse {
   insufficient_data: true;

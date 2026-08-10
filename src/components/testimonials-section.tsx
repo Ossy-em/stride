@@ -8,12 +8,7 @@ type Testimonial = {
   wash: string;
 };
 
-/**
- * NOTE: Jordan, Sam and Riley are real. Their original sentences are kept
- * verbatim — Jordan's has additional context appended after them.
- * Tobi and Mara are PLACEHOLDERS written to fill the layout. Replace them
- * with real quotes before this ships.
- */
+
 const testimonials: Testimonial[] = [
   {
     name: "Jordan",

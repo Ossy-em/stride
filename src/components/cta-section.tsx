@@ -1,8 +1,8 @@
 "use client";
 
-import Button from "./ui/Button";
+import Button from "./ui/button";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { screens, ScreenStyles } from "./mocks/StrideScreens";
+import { screens, ScreenStyles } from "./mocks/stride-screens";
 
 const tiles = [
   { Screen: screens.session, area: "a1" },

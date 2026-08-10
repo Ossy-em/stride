@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { supabaseAdmin } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth';
-import SessionComplete from '../../../components/session/SessionComplete';
+import SessionComplete from '../../../components/session/session-complete';
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;

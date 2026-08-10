@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import type { DashboardResponse } from '@/types';
-import DashboardWrapper from '@/components/shared/DashboardWrapper';
-import { Wordmark } from '@/components/ui/Wordmark';
+import DashboardWrapper from '@/components/shared/dashboard-wrapper';
+import { Wordmark } from '@/components/ui/wordmark';
 
 // Home components
-import GreetingCard from '@/components/home/GreetingCard';
-import StartSessionCTA from '@/components/home/StartSessionCTA';
-import StreakBanner from '@/components/home/StreakBanner';
-import CuriosityHook from '@/components/home/CuriosityHook';
-import QuickStats from '@/components/home/QuickStats';
-import { Spinner } from '@/components/ui/Spinner';
+import GreetingCard from '@/components/home/greeting-card';
+import StartSessionCTA from '@/components/home/start-session-cta';
+import StreakBanner from '@/components/home/streak-banner';
+import CuriosityHook from '@/components/home/curiosity-hook';
+import QuickStats from '@/components/home/quick-stats';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();

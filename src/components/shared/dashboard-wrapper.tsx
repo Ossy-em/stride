@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import OnboardingFlow from '../onboarding/OnboardingFlow';
+import OnboardingFlow from '../onboarding/onboarding-flow';
 
 interface DashboardWrapperProps {
   children: React.ReactNode;

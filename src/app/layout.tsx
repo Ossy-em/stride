@@ -3,11 +3,11 @@ import './globals.css'
 import { Providers } from './providers'
 import { Inter, Syne, Lora } from 'next/font/google'
 import { GeistSans } from 'geist/font/sans'
-import IOSInstallPrompt from '../components/shared/IOSInstallPrompt';
-import FeedbackButton from '../components/shared/FeedbackButton';
-import { ButtonStyles } from '../components/ui/Button'
-import { CardStyles } from '../components/ui/Card'
-import { WordmarkStyles } from '../components/ui/Wordmark'
+import IOSInstallPrompt from '../components/shared/ios-install-prompt';
+import FeedbackButton from '../components/shared/feedback-button';
+import { ButtonStyles } from '../components/ui/button'
+import { CardStyles } from '../components/ui/card'
+import { WordmarkStyles } from '../components/ui/wordmark'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const syne  = Syne({ subsets: ['latin'], variable: '--font-syne' })

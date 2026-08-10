@@ -1,6 +1,6 @@
 "use client";
 
-import Button from "./ui/Button";
+import Button from "./ui/button";
 
 const Bell = () => (
   <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">

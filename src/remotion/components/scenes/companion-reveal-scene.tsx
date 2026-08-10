@@ -7,8 +7,8 @@ import {
   Sequence,
 } from "remotion";
 import { theme } from "../../lib/theme";
-import { CompanionInterface } from "../CompanionInterface";
-import { AnimatedText } from "../AnimatedText";
+import { CompanionInterface } from "../companion-interface";
+import { AnimatedText } from "../animated-text";
 
 const ChatBubble: React.FC<{
   text: string;

@@ -1,7 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
-import { HackathonDemo } from "./compositions/HackathonDemo";
-import { UserAcquisitionVideo } from "./compositions/UserAcquisitionVideo";
+import { HackathonDemo } from "./compositions/hackathon-demo";
+import { UserAcquisitionVideo } from "./compositions/user-acquisition-video";
 
 export const RemotionRoot: React.FC = () => {
   return (

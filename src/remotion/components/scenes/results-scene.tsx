@@ -7,8 +7,8 @@ import {
   Sequence,
 } from "remotion";
 import { theme } from "../../lib/theme";
-import { StrideLogo } from "../StrideLogo";
-import { AnimatedText } from "../AnimatedText";
+import { StrideLogo } from "../stride-logo";
+import { AnimatedText } from "../animated-text";
 
 const AnimatedStat: React.FC<{
   value: number;
