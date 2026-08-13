@@ -1,14 +1,30 @@
 "use client";
 
-import Button from "./ui/button";
+import Button from "@/components/ui/button";
+import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { screens, ScreenStyles } from "./mocks/stride-screens";
 
 const tiles = [
-  { Screen: screens.session, area: "a1" },
-  { Screen: screens.nudge, area: "a2" },
-  { Screen: screens.check, area: "a3" },
-  { Screen: screens.fingerprint, area: "a4" },
+  {
+    src: "/cta/session.png",
+    alt: "Stride session screen showing a focus timer counting down while reading a book on software engineering",
+    area: "a1",
+  },
+  {
+    src: "/cta/nudge.png",
+    alt: "Stride nudge notification checking in after a few minutes of drift, with Not now and Got it actions",
+    area: "a2",
+  },
+  {
+    src: "/cta/check.png",
+    alt: "Stride focus check-in letting you rate your current focus as Focused, Neutral, or Distracted",
+    area: "a3",
+  },
+  {
+    src: "/cta/fingerprint.png",
+    alt: "Stride focus fingerprint showing your focus pattern across the week and your best day",
+    area: "a4",
+  },
 ];
 
 const stagger: Variants = {
@@ -31,7 +47,6 @@ export default function StrideCTA() {
 
   return (
     <section className="cta">
-      <ScreenStyles />
       <style>{`
         .cta {
           position: relative;
@@ -91,6 +106,10 @@ export default function StrideCTA() {
           transform: translateY(-4px);
           box-shadow: 0 18px 44px rgba(16, 34, 28, 0.08);
         }
+        .cta-cell-img {
+          object-fit: cover;
+          object-position: top center;
+        }
         @media (prefers-reduced-motion: reduce) {
           .cta-cell { transition: none; }
           .cta-cell:hover { transform: none; box-shadow: none; }
@@ -131,7 +150,7 @@ export default function StrideCTA() {
         </motion.div>
 
         <div className="cta-grid">
-          {tiles.map(({ Screen, area }, i) => (
+          {tiles.map(({ src, alt, area }, i) => (
             <motion.div
               key={area}
               className={`cta-cell ${area}`}
@@ -140,7 +159,13 @@ export default function StrideCTA() {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Screen />
+              <Image
+                src={src}
+                alt={alt}
+                fill
+                sizes="(min-width: 900px) 260px, 45vw"
+                className="cta-cell-img"
+              />
             </motion.div>
           ))}
         </div>

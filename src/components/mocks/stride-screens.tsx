@@ -1,5 +1,8 @@
 "use client";
 
+import type { CSSProperties } from "react";
+import { MessageCircle, ThumbsUp, Minus, ThumbsDown } from "lucide-react";
+
 /**
  * Stride product screens — coded mockups, not screenshots.
  *
@@ -7,8 +10,10 @@
  * with the tile it sits in. Sizes are authored against a nominal 320px
  * phone width: 1cqw ≈ 3.2px at that width.
  *
- * These are design targets as much as marketing assets — if the real UI
- * catches up to them, these can be retired.
+ * These now mirror the real product layout (ActiveTimer, InterventionNotification,
+ * CheckInModal) rather than an earlier design target — icon avatar, gradient
+ * timer arc, solid End-session button, and the icon-square mood picker all
+ * match what actually ships.
  */
 
 const SessionScreen = () => (
@@ -28,7 +33,14 @@ const SessionScreen = () => (
           r="42"
           strokeDasharray="263.9"
           strokeDashoffset="184"
+          stroke="url(#mkTimerGradient)"
         />
+        <defs>
+          <linearGradient id="mkTimerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10221c" />
+            <stop offset="100%" stopColor="#7c9389" />
+          </linearGradient>
+        </defs>
       </svg>
       <div className="mk-ring-inner">
         <span className="mk-time">03:46</span>
@@ -41,7 +53,7 @@ const SessionScreen = () => (
       <p className="mk-task-name">Reading a book on software engineering</p>
     </div>
 
-    <span className="mk-btn mk-btn--ghost">End session</span>
+    <span className="mk-btn mk-btn--solid">End session</span>
   </div>
 );
 
@@ -63,10 +75,15 @@ const NudgeScreen = () => (
 
     <div className="mk-sheet">
       <div className="mk-sheet-head">
-        <span className="mk-brand">Stride</span>
-        <span className="mk-chip">Focus check</span>
+        <span className="mk-avatar" aria-hidden>
+          <MessageCircle className="mk-avatar-icon" strokeWidth={2} />
+        </span>
+        <span className="mk-sheet-head-text">
+          <span className="mk-brand">Stride</span>
+          <span className="mk-chip">Focus check</span>
+        </span>
       </div>
-      <p className="mk-message">3 down. Settling in?</p>
+      <p className="mk-message mk-message--quiet">3 down. Settling in?</p>
       <div className="mk-actions">
         <span className="mk-btn mk-btn--ghost">Not now</span>
         <span className="mk-btn mk-btn--solid">Got it</span>
@@ -75,73 +92,107 @@ const NudgeScreen = () => (
   </div>
 );
 
-const options = [
-  { level: "1", label: "Focused", note: "I'm in the zone" },
-  { level: "2", label: "Drifting", note: "Mind's wandering a bit" },
-  { level: "3", label: "Lost", note: "Can't focus at all" },
+const moods = [
+  { label: "Focused", color: "#10221c", selected: true },
+  { label: "Neutral", color: "#7c9389", selected: false },
+  { label: "Distracted", color: "#b4c5bd", selected: false },
 ];
 
 const CheckScreen = () => (
   <div className="mk mk--check">
     <div className="mk-sheet mk-sheet--tall">
       <div className="mk-sheet-head">
-        <span className="mk-brand">Stride</span>
-        <span className="mk-chip">Feedback</span>
+        <span className="mk-avatar" aria-hidden>
+          <MessageCircle className="mk-avatar-icon" strokeWidth={2} />
+        </span>
+        <span className="mk-sheet-head-text">
+          <span className="mk-brand">Stride</span>
+          <span className="mk-chip">Feedback</span>
+        </span>
       </div>
       <p className="mk-message">Quick check — how&apos;s your focus?</p>
 
-      <div className="mk-options">
-        {options.map((o) => (
-          <span className="mk-option" data-level={o.level} key={o.label}>
-            <span className="mk-option-bar" />
-            <span className="mk-option-text">
-              <span className="mk-option-label">{o.label}</span>
-              <span className="mk-option-note">{o.note}</span>
+      <div className="mk-moods">
+        {moods.map((m) => (
+          <span
+            className="mk-mood"
+            data-selected={m.selected ? "true" : undefined}
+            key={m.label}
+            style={
+              m.selected
+                ? ({ "--mk-mood-color": m.color } as CSSProperties)
+                : undefined
+            }
+          >
+            <span className="mk-mood-icon">
+              {m.label === "Focused" && <ThumbsUp className="mk-mood-glyph" strokeWidth={2} />}
+              {m.label === "Neutral" && <Minus className="mk-mood-glyph" strokeWidth={2} />}
+              {m.label === "Distracted" && <ThumbsDown className="mk-mood-glyph" strokeWidth={2} />}
+            </span>
+            <span className="mk-mood-label" style={m.selected ? { color: m.color } : undefined}>
+              {m.label}
             </span>
           </span>
         ))}
       </div>
+
+      <span className="mk-btn mk-btn--solid mk-btn--block">Continue</span>
     </div>
   </div>
 );
 
 const days = [
-  { d: "S", v: 70 },
-  { d: "M", v: 0 },
-  { d: "T", v: 100, best: true },
-  { d: "W", v: 62 },
-  { d: "T", v: 0 },
-  { d: "F", v: 0 },
-  { d: "S", v: 55 },
+  { day: "Sun", score: 70, sessions: 2 },
+  { day: "Mon", score: 0, sessions: 0 },
+  { day: "Tue", score: 91, sessions: 3, best: true },
+  { day: "Wed", score: 62, sessions: 1 },
+  { day: "Thu", score: 0, sessions: 0 },
+  { day: "Fri", score: 0, sessions: 0 },
+  { day: "Sat", score: 55, sessions: 1, today: true },
 ];
+const maxScore = Math.max(...days.map((d) => d.score), 1);
 
 const FingerprintScreen = () => (
   <div className="mk mk--fp">
-    <span className="mk-label">Your focus fingerprint</span>
-
-    <div className="mk-stat">
-      <span className="mk-stat-num">90</span>
-      <span className="mk-stat-unit">avg focus</span>
-      <span className="mk-chip mk-chip--up">+3%</span>
+    <div className="mk-fp-head">
+      <span className="mk-fp-title">Focus by day</span>
+      <span className="mk-fp-best">
+        Best: <span className="mk-fp-best-day">Tuesdays</span>
+      </span>
     </div>
 
-    <div className="mk-bars">
-      {days.map((day, i) => (
-        <span className="mk-bar-col" key={i}>
-          <span className="mk-bar-track">
-            <span
-              className="mk-bar"
-              data-best={day.best ? "true" : undefined}
-              data-empty={day.v === 0 ? "true" : undefined}
-              style={{ height: `${day.v === 0 ? 3 : day.v}%` }}
-            />
+    <div className="mk-rows">
+      {days.map((day) => (
+        <div className="mk-row" key={day.day}>
+          <span className={`mk-row-day${day.today ? " mk-row-day--today" : ""}`}>
+            {day.day}
           </span>
-          <span className="mk-bar-day">{day.d}</span>
-        </span>
+          <span className="mk-row-track">
+            <span
+              className="mk-row-bar"
+              data-best={day.best ? "true" : undefined}
+              data-today={day.today ? "true" : undefined}
+              data-empty={day.score === 0 ? "true" : undefined}
+              style={{ width: `${day.score > 0 ? Math.max((day.score / maxScore) * 100, 8) : 0}%` }}
+            >
+              {day.score > 0 && <span className="mk-row-score">{day.score}</span>}
+            </span>
+          </span>
+          <span className="mk-row-count">{day.sessions > 0 ? `${day.sessions} sess` : "—"}</span>
+        </div>
       ))}
     </div>
 
-    <p className="mk-note">Best: Tuesdays</p>
+    <div className="mk-fp-legend">
+      <span className="mk-legend-item">
+        <span className="mk-legend-swatch" data-tone="best" />
+        Best day
+      </span>
+      <span className="mk-legend-item">
+        <span className="mk-legend-swatch" data-tone="today" />
+        Today
+      </span>
+    </div>
   </div>
 );
 
@@ -183,11 +234,15 @@ export function ScreenStyles() {
         flex-shrink: 0;
       }
       .mk-status {
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        align-self: center;
         gap: 2cqw;
-        padding: 5.6cqw 5.6cqw 0;
-        font-size: 3.4cqw;
+        margin-top: 5.6cqw;
+        padding: 1.8cqw 4cqw;
+        border-radius: 999px;
+        background: #f4f7f2;
+        font-size: 3.2cqw;
         font-weight: 500;
         color: var(--body);
       }
@@ -203,10 +258,11 @@ export function ScreenStyles() {
         padding: 3cqw 6cqw;
         white-space: nowrap;
       }
+      .mk-btn--block { width: 100%; }
       .mk-btn--solid { background: var(--ink); color: var(--on-dark); }
       .mk-btn--ghost {
         background: transparent;
-        color: var(--ink);
+        color: var(--body);
         border: 0.4cqw solid var(--rule);
       }
 
@@ -221,7 +277,6 @@ export function ScreenStyles() {
         font-weight: 600;
         line-height: 1;
       }
-      .mk-chip--up { background: rgba(16, 34, 28, 0.06); color: var(--field-2); }
 
       .mk-brand { font-size: 3.75cqw; font-weight: 600; letter-spacing: -0.01em; }
 
@@ -300,7 +355,21 @@ export function ScreenStyles() {
         gap: 3.4cqw;
       }
       .mk-sheet--tall { margin-top: auto; }
-      .mk-sheet-head { display: flex; align-items: center; gap: 2.4cqw; }
+      .mk-sheet-head { display: flex; align-items: center; gap: 2.6cqw; }
+      .mk-sheet-head-text { display: flex; flex-direction: column; gap: 0.6cqw; }
+
+      .mk-avatar {
+        width: 11cqw;
+        height: 11cqw;
+        flex-shrink: 0;
+        border-radius: 3cqw;
+        background: linear-gradient(135deg, var(--field-2), var(--field-1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mk-avatar-icon { width: 5cqw; height: 5cqw; color: #ffffff; }
+
       .mk-message {
         margin: 0;
         font-size: 4.1cqw;
@@ -308,78 +377,104 @@ export function ScreenStyles() {
         line-height: 1.3;
         letter-spacing: -0.015em;
       }
+      .mk-message--quiet { font-weight: 400; color: var(--body); }
       .mk-actions { display: flex; gap: 2.4cqw; }
       .mk-actions .mk-btn { flex: 1 1 0; }
 
-      /* ---------- check ---------- */
+      /* ---------- check: icon-square mood picker (mirrors CheckInModal) ---------- */
       .mk--check { justify-content: flex-end; }
-      .mk-options { display: flex; flex-direction: column; gap: 2cqw; }
-      .mk-option {
-        display: flex;
-        align-items: center;
-        gap: 3cqw;
-        padding: 2.8cqw 3cqw;
-        border-radius: 3cqw;
-        border: 0.4cqw solid var(--rule);
-      }
-      .mk-option-bar {
-        width: 1.2cqw;
-        height: 7cqw;
-        border-radius: 999px;
-        flex-shrink: 0;
-      }
-      /* depth of green = strength of focus. no icons, no new hues. */
-      .mk-option[data-level="1"] .mk-option-bar { background: var(--field-1); }
-      .mk-option[data-level="2"] .mk-option-bar { background: var(--field-4); }
-      .mk-option[data-level="3"] .mk-option-bar { background: var(--field-6); }
-
-      .mk-option-text { display: flex; flex-direction: column; gap: 0.4cqw; min-width: 0; }
-      .mk-option-label { font-size: 3.6cqw; font-weight: 600; line-height: 1.2; }
-      .mk-option-note { font-size: 3cqw; color: var(--quiet); line-height: 1.2; }
-
-      /* ---------- fingerprint ---------- */
-      .mk--fp { padding: 5.6cqw; gap: 4cqw; }
-      .mk-stat { display: flex; align-items: baseline; gap: 2.4cqw; }
-      .mk-stat-num {
-        font-size: 14cqw;
-        font-weight: 700;
-        line-height: 0.9;
-        letter-spacing: -0.05em;
-        font-variant-numeric: tabular-nums;
-      }
-      .mk-stat-unit { font-size: 3.1cqw; color: var(--quiet); }
-
-      .mk-bars {
-        flex: 1;
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1.8cqw;
-        align-items: end;
-      }
-      .mk-bar-col {
+      .mk-moods { display: flex; gap: 2.4cqw; }
+      .mk-mood {
+        flex: 1 1 0;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 2cqw;
-        height: 100%;
-        justify-content: flex-end;
+        gap: 1.6cqw;
+        padding: 3cqw 1.6cqw;
+        border-radius: 3.4cqw;
+        border: 0.4cqw solid var(--rule);
       }
-      .mk-bar-track {
-        width: 100%;
-        flex: 1;
+      .mk-mood[data-selected="true"] {
+        border-color: var(--mk-mood-color, var(--ink));
+        background: rgba(16, 34, 28, 0.05);
+      }
+      .mk-mood-icon {
+        width: 9.6cqw;
+        height: 9.6cqw;
+        border-radius: 2.6cqw;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
+        justify-content: center;
+        background: var(--edge);
       }
-      .mk-bar {
-        width: 100%;
-        border-radius: 1.2cqw;
-        background: var(--field-5);
+      .mk-mood[data-selected="true"] .mk-mood-icon {
+        background: var(--mk-mood-color, var(--ink));
       }
-      .mk-bar[data-best="true"] { background: var(--field-1); }
-      .mk-bar[data-empty="true"] { background: #e2e8e4; }
-      .mk-bar-day { font-size: 2.8cqw; color: var(--quiet); line-height: 1; }
+      .mk-mood-glyph { width: 4.6cqw; height: 4.6cqw; color: var(--quiet); }
+      .mk-mood[data-selected="true"] .mk-mood-glyph { color: #ffffff; }
+      .mk-mood-label { font-size: 3cqw; font-weight: 500; color: var(--quiet); text-align: center; }
 
-      .mk-note { margin: 0; font-size: 3cqw; color: var(--body); }
+      /* ---------- fingerprint ---------- */
+      .mk--fp { padding: 5.6cqw; gap: 3.6cqw; }
+
+      .mk-fp-head { display: flex; align-items: baseline; justify-content: space-between; }
+      .mk-fp-title { font-size: 3.8cqw; font-weight: 600; color: var(--ink); }
+      .mk-fp-best { font-size: 2.9cqw; color: var(--quiet); }
+      .mk-fp-best-day { font-weight: 500; color: var(--ink); }
+
+      .mk-rows { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2.4cqw; }
+      .mk-row { display: flex; align-items: center; gap: 2.4cqw; }
+      .mk-row-day {
+        width: 9cqw;
+        flex-shrink: 0;
+        font-size: 2.9cqw;
+        color: var(--quiet);
+      }
+      .mk-row-day--today { font-weight: 600; color: var(--ink); }
+
+      .mk-row-track {
+        flex: 1;
+        height: 6.2cqw;
+        border-radius: 1.6cqw;
+        background: #f4f7f2;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .mk-row-bar {
+        height: 100%;
+        border-radius: 1.6cqw;
+        background: var(--field-5);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 1.6cqw;
+        transition: width 0.3s ease;
+      }
+      .mk-row-bar[data-best="true"] { background: var(--field-1); }
+      .mk-row-bar[data-today="true"] { background: var(--accent, #8aa89c); }
+      .mk-row-bar[data-empty="true"] { background: transparent; width: 0 !important; }
+      .mk-row-score { font-size: 2.6cqw; font-weight: 500; color: #ffffff; }
+
+      .mk-row-count { width: 11cqw; flex-shrink: 0; text-align: right; font-size: 2.6cqw; color: var(--quiet); }
+
+      .mk-fp-legend {
+        display: flex;
+        gap: 4cqw;
+        padding-top: 3.2cqw;
+        border-top: 0.4cqw solid var(--edge);
+      }
+      .mk-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 1.4cqw;
+        font-size: 2.6cqw;
+        color: var(--quiet);
+      }
+      .mk-legend-swatch { width: 2.4cqw; height: 2.4cqw; border-radius: 0.6cqw; }
+      .mk-legend-swatch[data-tone="best"] { background: var(--field-1); }
+      .mk-legend-swatch[data-tone="today"] { background: #8aa89c; }
     `}</style>
   );
 }
