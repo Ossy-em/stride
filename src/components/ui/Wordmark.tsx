@@ -3,8 +3,8 @@
 import * as React from "react";
 
 /**
- * Stride wordmark — the standalone brand word, Lora, lowercase, matching
- * the landing-page nav. Use this anywhere "Stride" appears as branding
+ * Stride wordmark — the standalone brand word, Geist, capital S, matching
+ * the logo lockup (components/ui/logo.tsx). Use this anywhere "Stride" appears as branding
  * (toasts, headers, empty states) instead of typing the word by hand.
  *
  * size: inherits by default; pass a token for common placements.
@@ -29,7 +29,7 @@ export function Wordmark({ size = "md", className, as = "span", ...props }: Word
       style={{ fontSize: sizes[size] }}
       {...props}
     >
-      stride
+      Stride
     </Tag>
   );
 }
@@ -38,11 +38,11 @@ export function WordmarkStyles() {
   return (
     <style>{`
       .s-wordmark {
-        font-family: 'Lora', Georgia, serif;
-        font-weight: 600;
-        letter-spacing: -0.01em;
+        font-family: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+        font-weight: 590;
+        letter-spacing: -0.035em;
         line-height: 1;
-        color: #1a1a17;
+        color: inherit;
         display: inline-block;
       }
     `}</style>

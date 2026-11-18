@@ -6,8 +6,9 @@ import { motion, useScroll, useTransform, useReducedMotion, MotionValue } from "
 const text =
   "Concentration is difficult to sustain and effortless to lose. The hours dissolve into distractions you hardly notice. Stride exists to safeguard your attention.";
 
-const DIM = "#dfe4e0"; // --field-6
-const INK = "#10221c"; // --field-1
+// dark landing: letters fill from a faint grey to the light ink
+const DIM = "#26282c";
+const INK = "#f7f8f8";
 
 // how much of the scroll each letter takes to fill.
 // larger = softer leading edge, smaller = harder wipe.
@@ -42,23 +43,13 @@ export default function StrideAbout() {
   const words = text.split(" ");
 
   return (
-    <section className="about section section--tight">
+    <section className="about section">
       <style>{`
-        .about { font-family: var(--font-sans); }
-        .about-inner { max-width: var(--maxw); margin: 0 auto; }
-        .about-p {
-          margin: 0;
-          font-weight: var(--fw-bold);
-          font-size: var(--fs-h1);
-          line-height: var(--lh-h1);
-          letter-spacing: var(--ls-h1);
-          max-width: 22ch;
-          color: var(--ink);
-        }
+        .about-p { max-width: 25em; text-wrap: pretty; }
       `}</style>
 
-      <div className="about-inner">
-        <p ref={ref} className="about-p">
+      <div className="l-inner">
+        <p ref={ref} className="about-p t-title">
           {reduced
             ? text
             : words.map((word, wi) => (

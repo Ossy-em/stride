@@ -1,0 +1,70 @@
+/* =====================================================================
+   Sign-in and email-link pages: Linear's structure on the app tokens.
+   ===================================================================== */
+.auth {
+  min-height: 100dvh; display: flex; justify-content: center;
+  padding: clamp(64px, 22vh, 200px) 16px calc(48px + env(safe-area-inset-bottom));
+  background: var(--app-ground); color: var(--app-ink);
+}
+.auth-col { width: 100%; max-width: 288px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+.auth-mark {
+  margin-bottom: 28px;
+  display: inline-flex; color: var(--app-ink); text-decoration: none;
+}
+.auth-step { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.auth-title { margin: 0 0 28px; font-size: 19px; line-height: 26px; font-weight: 510; letter-spacing: -0.01em; color: var(--app-ink); }
+
+.auth-buttons { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.auth-btn {
+  width: 100%; height: 44px; padding: 0 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--app-raised); color: var(--app-ink);
+  box-shadow: inset 0 0 0 1px var(--app-line-strong), var(--app-shadow);
+  font-size: 14px; font-weight: 510; text-decoration: none;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.auth-btn:hover { background: var(--app-panel); }
+.auth-btn--primary { background: var(--app-accent); color: var(--app-on-accent); box-shadow: none; }
+.auth-btn--primary:hover { background: var(--app-accent); opacity: 0.9; }
+.auth-btn:disabled { cursor: default; }
+.auth-btn:disabled:not(:has(.auth-spin)) { opacity: 0.5; }
+.auth-btn:focus-visible, .auth-input:focus-visible, .auth-link:focus-visible {
+  outline: 2px solid var(--app-active-ink); outline-offset: 2px;
+}
+
+.auth-input {
+  width: 100%; height: 44px; padding: 0 18px;
+  border: 0; border-radius: 999px; outline: none;
+  background: var(--app-raised); color: var(--app-ink);
+  box-shadow: inset 0 0 0 1px var(--app-line-strong);
+  font: inherit; font-size: 14px; text-align: center;
+}
+.auth-input::placeholder { color: var(--app-quiet); }
+.auth-input:focus { box-shadow: inset 0 0 0 1px var(--app-muted); outline: none; }
+
+.auth-spin {
+  width: 16px; height: 16px; border-radius: 999px;
+  border: 1.5px solid currentColor; border-right-color: transparent;
+  animation: auth-spin 0.7s linear infinite; opacity: 0.8;
+}
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
+.auth-link {
+  margin-top: 20px; padding: 2px 4px; border: 0; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 510; color: var(--app-muted);
+}
+.auth-link:hover { color: var(--app-ink); }
+.auth-sent { margin: 0; font-size: 14px; line-height: 21px; color: var(--app-muted); }
+.auth-sent strong { color: var(--app-ink); font-weight: 510; overflow-wrap: anywhere; }
+.auth-error { margin: 14px 0 0; font-size: 13px; line-height: 18px; color: var(--app-warn); }
+
+.auth-legal { margin: 32px 0 0; max-width: 240px; font-size: 13px; line-height: 20px; color: var(--app-muted); }
+.auth-legal a { color: var(--app-ink); text-decoration: none; }
+.auth-legal a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* email-link landing */
+.auth-verify p { margin: 0; font-size: 14px; line-height: 21px; color: var(--app-muted); }
+.auth-verify .auth-title { margin-bottom: 8px; }
+.auth-verify .auth-btn { margin-top: 28px; }

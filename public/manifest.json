@@ -4,8 +4,8 @@
   "description": "AI-powered focus companion that studies your patterns and intervenes before you get distracted.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f2a1f",
-  "theme_color": "#0f2a1f",
+  "background_color": "#08090a",
+  "theme_color": "#08090a",
   "orientation": "portrait",
   "icons": [
     {

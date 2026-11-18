@@ -72,7 +72,7 @@ export async function analyzeUserPatterns(
     const response = await callClaude(
       prompt,
       undefined,
-      'claude-3-haiku-20240307',
+      'claude-sonnet-5',
       {
         callType: 'pattern_analysis',
         userId,
@@ -166,11 +166,11 @@ export async function generateIntervention(
       prompt = applyVariantStyle(prompt, context.variant);
     }
     
-    // *** CHANGED: Uses model parameter, falls back to haiku ***
+    // *** CHANGED: Uses model parameter, falls back to sonnet 5 ***
     const response = await callClaude(
       prompt,
       undefined,
-      model || 'claude-3-haiku-20240307',
+      model || 'claude-sonnet-5',
       {
         callType: 'intervention_generation',
         userId,
@@ -258,7 +258,7 @@ export async function generateDashboardInsights(
     const response = await callClaude(
       prompt,
       undefined,
-      'claude-3-haiku-20240307',
+      'claude-sonnet-5',
       {
         callType: 'dashboard_insights',
         userId,

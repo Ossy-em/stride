@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabaseAdmin as supabase } from './supabase'; // server-only client; the public key is never used server-side
 import type { Session } from '../types';
 import { assignVariant, applyTimingOffset, type ABTestVariant } from './ab-testing';
 

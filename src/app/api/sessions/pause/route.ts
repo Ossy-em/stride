@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth';
-import { getUserPlan } from '../../../../lib/plans';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,14 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    // Check premium access
-    const plan = await getUserPlan(user.id);
-    if (plan !== 'premium') {
-      return NextResponse.json({
-        error: 'Pause/resume is a Premium feature',
-        upgrade: true,
-      }, { status: 403 });
-    }
+    // Pause/resume is available on every plan.
 
     // Fetch the session
     const { data: session, error: fetchError } = await supabaseAdmin
@@ -87,6 +79,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Pause/resume error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

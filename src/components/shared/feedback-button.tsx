@@ -1,141 +1,155 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MessageSquarePlus, X, Send, Loader2 } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+/**
+ * Feedback: a floating button outside the app shell (inside it, the sidebar
+ * opens the same panel via the stride:feedback event). On the app tokens,
+ * so it follows light / dark like the rest of the app. Copy unchanged.
+ */
+
+import { useEffect, useState } from "react";
+import { MessageSquarePlus, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { isShellRoute } from "@/components/app/routes";
+import "./floating.css";
+
+// zero-height wrapper that only carries the app tokens; inline so it can never take up a screen
+const PORTAL = { minHeight: 0, height: 0, background: "none" } as const;
+
+type Kind = "issue" | "idea" | "general";
+const KINDS: { value: Kind; label: string }[] = [
+  { value: "issue", label: "Issue" },
+  { value: "idea", label: "Idea" },
+  { value: "general", label: "General" },
+];
+const PLACEHOLDER: Record<Kind, string> = {
+  issue: "What happened? What did you expect?",
+  idea: "What would make Stride better?",
+  general: "What's on your mind?",
+};
 
 export default function FeedbackButton() {
+  const reduced = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [type, setType] = useState<'issue' | 'idea' | 'general'>('general');
+  const [message, setMessage] = useState("");
+  const [type, setType] = useState<Kind>("general");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const pathname = usePathname();
 
-  // Don't show on auth pages or during active sessions
-  if (pathname?.includes('/auth') || pathname?.includes('/session/active')) {
+  // The app shell's sidebar opens this panel via a window event
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener("stride:feedback", open);
+    return () => window.removeEventListener("stride:feedback", open);
+  }, []);
+
+  // Esc closes
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  // Not on sign-in pages or during active sessions
+  if (pathname?.includes("/auth") || pathname?.startsWith("/sign-in") || pathname?.includes("/session/")) {
     return null;
   }
 
-  const handleSubmit = async () => {
-    if (!message.trim()) return;
+  const close = () => {
+    setIsOpen(false);
+    setSent(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || sending) return;
     setSending(true);
-
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: message.trim(),
-          type,
-          page: pathname,
-        }),
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message.trim(), type, page: pathname }),
       });
-
       if (response.ok) {
         setSent(true);
         setTimeout(() => {
           setIsOpen(false);
           setSent(false);
-          setMessage('');
-          setType('general');
+          setMessage("");
+          setType("general");
         }, 2000);
       }
     } catch (error) {
-      console.error('Feedback submit error:', error);
+      console.error("Feedback submit error:", error);
     } finally {
       setSending(false);
     }
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#10221c] text-white rounded-full shadow-lg hover:bg-[#1a3229] transition-all hover:scale-105 flex items-center justify-center"
-        aria-label="Send feedback"
-      >
-        <MessageSquarePlus className="w-5 h-5" />
-      </button>
-    );
-  }
+  // inside the app shell, feedback lives in the sidebar instead
+  const showFab = !isOpen && !isShellRoute(pathname);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-[#e6ebe8] overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#10221c]">
-        <span className="text-sm font-medium text-white">Send Feedback</span>
-        <button
-          onClick={() => {
-            setIsOpen(false);
-            setSent(false);
-          }}
-          className="text-white/60 hover:text-white"
-        >
-          <X className="w-4 h-4" />
+    <div className="app app-portal" style={PORTAL}>
+      {showFab && (
+        <button className="fl-fab" onClick={() => setIsOpen(true)} aria-label="Send feedback">
+          <MessageSquarePlus size={18} strokeWidth={1.75} />
         </button>
-      </div>
-
-      {sent ? (
-        <div className="p-6 text-center">
-          <p className="text-sm font-medium text-[#10221c]">Thanks for the feedback!</p>
-          <p className="text-xs text-[#7c9389] mt-1">This helps make Stride better.</p>
-        </div>
-      ) : (
-        <div className="p-4">
-          {/* Type selector */}
-          <div className="flex gap-2 mb-3">
-            {[
-              { value: 'issue' as const, label: ' Issue' },
-              { value: 'idea' as const, label: ' Idea' },
-              { value: 'general' as const, label: ' General' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setType(option.value)}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  type === option.value
-                    ? 'bg-[#10221c] text-[#f0f0ec]'
-                    : 'bg-[#f4f7f2] text-[#48645b] hover:bg-[#eef1ed]'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Message */}
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={
-              type === 'issue'
-                ? "What happened? What did you expect?"
-                : type === 'idea'
-                ? "What would make Stride better?"
-                : "What's on your mind?"
-            }
-            className="w-full h-24 px-3 py-2 text-sm bg-[#f4f7f2] border border-[#dfe4e0] rounded-xl text-[#10221c] placeholder-[#7c9389] focus:outline-none focus:ring-2 focus:ring-[#8aa89c]/20 focus:border-[#8aa89c] resize-none"
-            autoFocus
-          />
-
-          {/* Submit */}
-          <button
-            onClick={handleSubmit}
-            disabled={!message.trim() || sending}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-[#f0f0ec] bg-[#10221c] rounded-xl hover:bg-[#1a3229] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Send className="w-3.5 h-3.5" />
-                Send
-              </>
-            )}
-          </button>
-        </div>
       )}
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fl-panel"
+            role="dialog"
+            aria-label="Send Feedback"
+            initial={reduced ? false : { opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduced ? undefined : { opacity: 0, y: 6, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="fl-head">
+              <span>Send Feedback</span>
+              <button className="app-icon-btn fl-close" onClick={close} aria-label="Close">
+                <X size={15} strokeWidth={1.75} />
+              </button>
+            </div>
+
+            {sent ? (
+              <div className="fl-sent" role="status">
+                <p>Thanks for the feedback!</p>
+                <span>This helps make Stride better.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="app-seg fl-kinds">
+                  {KINDS.map((k) => (
+                    <button key={k.value} type="button" aria-pressed={type === k.value} onClick={() => setType(k.value)}>
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className="fl-text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit(e);
+                  }}
+                  placeholder={PLACEHOLDER[type]}
+                  aria-label="Feedback"
+                  autoFocus
+                />
+                <button type="submit" className="app-cta fl-send" disabled={!message.trim() || sending}>
+                  {sending ? <span className="fl-spin" aria-hidden="true" /> : "Send"}
+                </button>
+              </form>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

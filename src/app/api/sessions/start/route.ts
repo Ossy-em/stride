@@ -5,10 +5,11 @@ import { getCurrentUser } from '../../../../lib/auth';
 import { canStartSession, getUserPlan, isDurationAllowed } from '../../../../lib/plans';
 
 const startSessionSchema = z.object({
-  taskDescription: z.string().min(1),
+  taskDescription: z.string().trim().min(1).max(300),
   taskType: z.enum(['coding', 'writing', 'reading']),
-  plannedDuration: z.number().min(1),
-  timezone: z.string().optional(), // *** NEW: timezone from client ***
+  plannedDuration: z.number().int().min(1).max(600),
+  timezone: z.string().max(64).optional(),
+  goalId: z.string().uuid().nullable().optional(), // goal this session counts towards
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Parse body first so we can get timezone
     const body = await request.json();
-    const { taskDescription, taskType, plannedDuration, timezone } = startSessionSchema.parse(body);
+    const { taskDescription, taskType, plannedDuration, timezone, goalId } = startSessionSchema.parse(body);
 
     // *** Check session limit with timezone ***
     const sessionCheck = await canStartSession(user.id, timezone);
@@ -48,68 +49,28 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // ENSURE USER EXISTS IN YOUR USERS TABLE
-    const { data: existingUser } = await supabaseAdmin
+    // Users are created at sign-in. This only fills the gap for an account
+    // that somehow has no row yet. It never deletes or re-keys a user: an
+    // older version did, and that would have cascaded away all their data.
+    const { error: ensureError } = await supabaseAdmin
       .from('users')
-      .select('id')
-      .eq('email', user.email)
-      .maybeSingle();
+      .upsert({ id: user.id, email: user.email, name: user.name, image: user.image }, { onConflict: 'id', ignoreDuplicates: true });
+    if (ensureError) {
+      console.error('Failed to ensure user row:', ensureError.message);
+      return NextResponse.json({ error: 'Failed to start session' }, { status: 500 });
+    }
 
-    if (existingUser && existingUser.id !== user.id) {
-      console.log(`⚠️ User ID mismatch for ${user.email}. Migrating to new ID...`);
-      
-      await supabaseAdmin
-        .from('users')
-        .delete()
-        .eq('email', user.email);
-      
-      const { error: insertError } = await supabaseAdmin
-        .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        });
-        
-      if (insertError) {
-        console.error('Failed to create user:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`✅ User ${user.email} migrated to new ID`);
-    } else if (!existingUser) {
-      const { error: insertError } = await supabaseAdmin
-        .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        });
-        
-      if (insertError) {
-        console.error('Failed to create user:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`✅ New user ${user.email} created`);
-    } else {
-      await supabaseAdmin
-        .from('users')
-        .update({
-          name: user.name,
-          image: user.image,
-        })
-        .eq('id', user.id);
-        
-      console.log(`✅ User ${user.email} synced`);
+    // Only link goals that belong to this user and are still active
+    let linkedGoalId: string | null = null;
+    if (goalId) {
+      const { data: goal } = await supabaseAdmin
+        .from('goals')
+        .select('id')
+        .eq('id', goalId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      linkedGoalId = goal?.id ?? null;
     }
 
     // CREATE THE SESSION
@@ -121,6 +82,7 @@ export async function POST(request: NextRequest) {
         task_type: taskType,
         planned_duration: plannedDuration,
         started_at: new Date().toISOString(),
+        ...(linkedGoalId ? { goal_id: linkedGoalId } : {}),
       })
       .select()
       .single();
@@ -133,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🎯 Session ${session.id} started for user ${user.email}`);
+    console.log(`Session ${session.id} started`);
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {

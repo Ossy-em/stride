@@ -6,21 +6,19 @@ import { Check, Crown } from 'lucide-react';
 import { fadeInUp, staggerContainer } from './animations';
 
 const freeFeatures = [
-  '3 focus sessions per day',
+  '2 focus sessions per day',
   'Up to 30 min per session',
-  'Basic AI nudges',
-  'Growth stats on dashboard',
+  'AI nudges',
+  'Full Focus Fingerprint',
+  'Pause & resume sessions',
+  'Full session history',
   'Push notifications',
 ];
 
 const premiumFeatures = [
+  'Everything in Free',
   'Unlimited focus sessions',
   'Up to 3 hours per session',
-  'Advanced AI (smarter nudges)',
-  'Full Focus Fingerprint',
-  'Pause & resume sessions',
-  'Full session history',
-  'Data export',
 ];
 
 export default function PricingSection() {
@@ -110,7 +108,7 @@ export default function PricingSection() {
             </div>
             <p className="text-[13px] text-gray-400 mb-7">Great for getting started</p>
             <a
-              href="/auth/signin"
+              href="/sign-in"
               className="block w-full py-3 text-center text-[13px] font-semibold text-[#1a3a2f] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 mb-7"
             >
               Get Started Free
@@ -181,7 +179,7 @@ export default function PricingSection() {
                 </motion.p>
               </AnimatePresence>
               <a
-                href="/auth/signin?callbackUrl=/premium"
+                href="/sign-in?callbackUrl=/premium"
                 className="block w-full py-3 text-center text-[13px] font-semibold text-[#0a1f16] bg-lime-400 rounded-xl hover:bg-lime-300 transition-all duration-300 mb-7 hover:shadow-[0_0_25px_rgba(163,230,53,0.25)]"
               >
                 Upgrade to Premium

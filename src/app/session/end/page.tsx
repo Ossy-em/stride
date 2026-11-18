@@ -1,7 +1,12 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { supabaseAdmin } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth';
-import SessionComplete from '../../../components/session/session-complete';
+import SessionDone from '@/components/app/session/session-done';
+import FocusFrame from '@/components/app/focus-frame';
+import { getUserPlan } from '@/lib/plans';
+
+export const metadata: Metadata = { title: "Session complete", robots: { index: false, follow: false } };
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;
@@ -18,7 +23,7 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
   // Auth check
   const user = await getCurrentUser();
   if (!user) {
-    redirect('/auth/signin');
+    redirect('/sign-in');
   }
 
   // Fetch session details
@@ -40,7 +45,7 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
 
   // Check if session already ended
   if (session.ended_at) {
-    redirect('/dashboard');
+    redirect('/home');
   }
 
   // If session is currently paused, account for the final pause duration
@@ -103,12 +108,16 @@ export default async function EndSessionPage({ searchParams }: PageProps) {
     console.error('Error fetching streak:', e);
   }
 
+  const plan = await getUserPlan(user.id).catch(() => 'free' as const);
+
   return (
-    <SessionComplete
-      sessionId={session.id}
-      taskDescription={session.task_description}
-      elapsedMinutes={elapsedMinutes}
-      currentStreak={currentStreak}
-    />
+    <FocusFrame plan={plan}>
+      <SessionDone
+        sessionId={session.id}
+        taskDescription={session.task_description}
+        elapsedMinutes={elapsedMinutes}
+        currentStreak={currentStreak}
+      />
+    </FocusFrame>
   );
 }

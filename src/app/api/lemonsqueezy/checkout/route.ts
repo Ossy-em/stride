@@ -8,9 +8,6 @@ const VARIANT_IDS = {
   monthly: process.env.LEMONSQUEEZY_MONTHLY_VARIANT_ID!, 
   yearly: process.env.LEMONSQUEEZY_YEARLY_VARIANT_ID!,   
 };
-console.log('🔍 Variant IDs:', VARIANT_IDS);
-console.log('🔍 Store ID:', LS_STORE_ID);
-console.log('🔍 Using API Key:', LS_API_KEY.substring(0, 10) + '...');
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,6 +80,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: checkoutUrl });
   } catch (error: any) {
     console.error('Checkout error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create checkout' }, { status: 500 });
   }
 }

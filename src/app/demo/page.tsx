@@ -17,7 +17,7 @@ export default function DemoPage() {
               </p>
             </div>
             <Link
-              href="/dashboard"
+              href="/home"
               className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
             >
               Back to App

@@ -1,9 +1,6 @@
-import React from 'react'
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+// Old stub URL: sign-in lives at /sign-in.
+export default function LegacyLogin() {
+  redirect("/sign-in");
 }
-
-export default page

@@ -1,145 +1,123 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Share, X, Plus } from 'lucide-react';
+/**
+ * Add-to-home-screen sheet for iOS Safari (push only works from the
+ * installed app there). On the app tokens; copy unchanged.
+ */
+
+import { useState, useEffect } from "react";
+import { Share, X, Plus, Check, ArrowDown } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import "./floating.css";
+
+// zero-height wrapper that only carries the app tokens; inline so it can never take up a screen
+const PORTAL = { minHeight: 0, height: 0, background: "none" } as const;
 
 function isIOS(): boolean {
-  if (typeof window === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  if (typeof window === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
 }
 
 function isInStandaloneMode(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
   return (
-    ('standalone' in window.navigator && (window.navigator as any).standalone) ||
-    window.matchMedia('(display-mode: standalone)').matches
+    ("standalone" in window.navigator && Boolean((window.navigator as unknown as { standalone?: boolean }).standalone)) ||
+    window.matchMedia("(display-mode: standalone)").matches
   );
 }
 
 function isSafari(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
   const ua = navigator.userAgent;
   return /Safari/.test(ua) && !/Chrome|CriOS|FxiOS/.test(ua);
 }
 
-const DISMISS_KEY = 'stride-ios-prompt-dismissed';
+const DISMISS_KEY = "stride-ios-prompt-dismissed";
 
-export default function IOSInstallPrompt() {
-  const [show, setShow] = useState(false);
+export default function IOSInstallPrompt({ preview = false }: { preview?: boolean }) {
+  const reduced = useReducedMotion();
+  const [show, setShow] = useState(preview);
 
   useEffect(() => {
+    if (preview) return;
     // Only show on iOS Safari when not already installed
     if (!isIOS() || !isSafari() || isInStandaloneMode()) return;
-
-    // Check if user already dismissed
     try {
-      const dismissed = sessionStorage.getItem(DISMISS_KEY);
-      if (dismissed) return;
+      if (sessionStorage.getItem(DISMISS_KEY)) return;
     } catch {}
-
     // Small delay so it doesn't flash on load
     const timer = setTimeout(() => setShow(true), 2000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [preview]);
 
   const handleDismiss = () => {
     setShow(false);
     try {
-      sessionStorage.setItem(DISMISS_KEY, 'true');
+      sessionStorage.setItem(DISMISS_KEY, "true");
     } catch {}
   };
 
-  if (!show) return null;
+  const steps = [
+    {
+      Icon: Share,
+      text: (
+        <>
+          Tap the <strong>Share</strong> button in Safari
+        </>
+      ),
+    },
+    {
+      Icon: Plus,
+      text: (
+        <>
+          Scroll down and tap <strong>Add to Home Screen</strong>
+        </>
+      ),
+    },
+    { Icon: Check, text: <>Open Stride from your home screen and notifications will work</> },
+  ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 pointer-events-none">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
-        onClick={handleDismiss}
-      />
-
-      {/* Prompt card */}
-      <div className="relative w-full max-w-sm pointer-events-auto mb-2 animate-slide-up">
-        <div className="bg-[#1a2e24] border border-white/10 rounded-2xl p-5 shadow-2xl">
-          {/* Close button */}
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <X className="w-4 h-4 text-white/60" />
-          </button>
-
-          {/* Header */}
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              Install Stride
-            </h3>
-            <p className="text-sm text-white/50 mt-1">
-              Add to your home screen to get focus notifications on mobile.
-            </p>
+    <div className="app app-portal" style={PORTAL}>
+      <AnimatePresence>
+        {show && (
+          <div className="fl-sheet-wrap">
+            <motion.div
+              className="fl-scrim"
+              onClick={handleDismiss}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className="fl-sheet"
+              role="dialog"
+              aria-label="Install Stride"
+              initial={reduced ? false : { y: "100%" }}
+              animate={{ y: 0 }}
+              exit={reduced ? undefined : { y: "100%" }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <button className="app-icon-btn fl-close fl-sheet-close" onClick={handleDismiss} aria-label="Close">
+                <X size={15} strokeWidth={1.75} />
+              </button>
+              <h3>Install Stride</h3>
+              <p className="fl-sheet-lead">Add to your home screen to get focus notifications on mobile.</p>
+              <ol className="fl-steps">
+                {steps.map(({ Icon, text }, i) => (
+                  <li key={i}>
+                    <span className="fl-step-icon">
+                      <Icon size={15} strokeWidth={1.75} />
+                    </span>
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ol>
+              <ArrowDown className="fl-sheet-arrow" size={18} strokeWidth={1.75} aria-hidden="true" />
+            </motion.div>
           </div>
-
-          {/* Steps */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <Share className="w-4 h-4 text-[#8aa89c]-400" />
-              </div>
-              <div>
-                <p className="text-sm text-white/80">
-                  Tap the <span className="font-medium text-white">Share</span> button in Safari
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-[#8aa89c]-400" />
-              </div>
-              <div>
-                <p className="text-sm text-white/80">
-                  Scroll down and tap <span className="font-medium text-white">Add to Home Screen</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-[#8aa89c]-400 text-sm font-bold">✓</span>
-              </div>
-              <div>
-                <p className="text-sm text-white/80">
-                  Open Stride from your home screen and notifications will work
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Arrow pointing down to Safari share button */}
-          <div className="mt-4 flex justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white/30 animate-bounce">
-              <path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
-
-        <style jsx>{`
-          @keyframes slide-up {
-            from {
-              opacity: 0;
-              transform: translateY(100%);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          .animate-slide-up {
-            animation: slide-up 0.3s ease-out;
-          }
-        `}</style>
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

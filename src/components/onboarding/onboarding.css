@@ -1,0 +1,107 @@
+/* =====================================================================
+   Onboarding: one centred column on the app ground, light and dark.
+   ===================================================================== */
+.app { --app-chart: #6fdc9c; }
+:root[data-app-theme="light"] .app { --app-chart: #2a8a58; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-app-theme="dark"]) .app { --app-chart: #2a8a58; }
+}
+
+.ob {
+  min-height: 100dvh; display: flex; flex-direction: column;
+  background: var(--app-ground); color: var(--app-ink);
+}
+
+.ob-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 20px; padding-top: env(safe-area-inset-top);
+}
+.ob-wordmark { font-size: 16px; font-weight: 590; letter-spacing: -0.02em; color: var(--app-ink); }
+.ob-skip {
+  padding: 6px 2px; border: 0; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 510; color: var(--app-muted);
+  transition: color 0.15s ease;
+}
+.ob-skip:hover { color: var(--app-ink); }
+.ob-skip:disabled { opacity: 0.5; cursor: default; }
+
+.ob-stage {
+  /* top-anchored so the progress bar stays put while step heights change */
+  flex: 1; display: flex; align-items: flex-start; justify-content: center;
+  padding: clamp(32px, 12vh, 120px) 16px calc(48px + env(safe-area-inset-bottom));
+}
+.ob-col { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+.ob-progress { display: flex; gap: 6px; margin-bottom: 40px; }
+.ob-progress span {
+  width: 24px; height: 3px; border-radius: 3px; background: var(--app-line-strong);
+  transition: background 0.2s ease;
+}
+.ob-progress span[data-state="done"] { background: color-mix(in srgb, var(--app-ink) 35%, transparent); }
+.ob-progress span[data-state="current"] { background: var(--app-ink); }
+
+.ob-step { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.ob-kicker { margin: 0 0 6px; font-size: 13px; line-height: 18px; color: var(--app-muted); }
+.ob-title {
+  margin: 0; max-width: 14em;
+  font-size: 28px; line-height: 34px; font-weight: 590; letter-spacing: -0.02em; color: var(--app-ink);
+}
+.ob-body { margin: 12px 0 0; max-width: 26em; font-size: 15px; line-height: 23px; color: var(--app-muted); }
+
+.ob-actions { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 32px; }
+.ob-next { height: 40px; padding: 0 22px; font-size: 14px; }
+.ob-back { width: 40px; height: 40px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--app-line-strong); }
+.ob-back:disabled { opacity: 0.4; }
+.ob-error { margin: 14px 0 0; font-size: 13px; line-height: 18px; color: var(--app-warn); }
+
+/* ---- visuals ---- */
+.ob-visual {
+  width: 100%; margin-bottom: 32px; padding: 28px 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px; background: var(--app-panel);
+  box-shadow: inset 0 0 0 1px var(--app-line);
+  text-align: left;
+}
+
+/* check card, as it appears in a session */
+.ob-check {
+  width: 100%; max-width: 300px; padding: 16px; border-radius: 16px;
+  background: var(--app-raised); box-shadow: inset 0 0 0 1px var(--app-line-strong), var(--app-shadow);
+}
+.ob-check .check-q { padding-right: 0; }
+.ob-check .check-option, .ob-check .check-option:hover { cursor: default; background: none; box-shadow: inset 0 0 0 1px var(--app-line); }
+.ob-check .check-option[data-picked] { background: var(--app-active); box-shadow: inset 0 0 0 1px var(--app-chart); }
+
+/* push notification */
+.ob-notify {
+  width: 100%; max-width: 320px; display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: 18px;
+  background: var(--app-raised); box-shadow: inset 0 0 0 1px var(--app-line-strong), var(--app-pop-shadow);
+}
+.ob-notify-icon {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--app-accent); color: var(--app-on-accent);
+  font-size: 18px; font-weight: 590; line-height: 1; letter-spacing: -0.02em;
+}
+.ob-notify-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ob-notify-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 18px; }
+.ob-notify-top strong { font-weight: 590; color: var(--app-ink); }
+.ob-notify-top span { color: var(--app-quiet); font-size: 12px; }
+.ob-notify-msg { font-size: 14px; line-height: 20px; color: var(--app-ink-soft); }
+
+/* focus by day */
+.ob-fp { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+.ob-fp-row { display: grid; grid-template-columns: 32px 1fr 24px; align-items: center; gap: 12px; font-size: 13px; line-height: 18px; }
+.ob-fp-day { color: var(--app-muted); }
+.ob-fp-track { height: 8px; border-radius: 4px; background: var(--app-hover); overflow: hidden; }
+.ob-fp-bar { display: block; height: 100%; border-radius: 4px; background: color-mix(in srgb, var(--app-chart) 34%, transparent); }
+.ob-fp-score { text-align: right; color: var(--app-ink); font-variant-numeric: tabular-nums; }
+.ob-fp-row[data-best] .ob-fp-day { color: var(--app-ink); font-weight: 510; }
+.ob-fp-row[data-best] .ob-fp-bar { background: var(--app-chart); }
+
+@media (max-width: 480px) {
+  .ob-progress { margin-bottom: 28px; }
+  .ob-title { font-size: 24px; line-height: 30px; }
+  .ob-visual { padding: 22px 16px; margin-bottom: 24px; }
+}

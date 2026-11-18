@@ -1,9 +1,6 @@
-import React from 'react'
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+// Old stub URL: finished sessions show at /session/end?id=..., the list at /sessions.
+export default function LegacySessionComplete() {
+  redirect("/sessions");
 }
-
-export default page

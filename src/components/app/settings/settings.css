@@ -1,0 +1,41 @@
+/* Settings: rows with a label on the left and a control on the right. */
+.set-page > .app-section:first-of-type { margin-top: 0; }
+.set-row { min-height: 56px; }
+/* dropdowns open over the rows below instead of being cut off by the rounded box */
+.set-page .app-list { overflow: visible; }
+.set-control .app-chip-wrap { z-index: 5; }
+.set-control { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+.set-control .app-chip { margin-left: 0; }
+.set-value { font-size: 13px; color: var(--app-ink-soft); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.set-me .app-avatar { width: 36px; height: 36px; font-size: 13px; }
+.set-name input, .set-input {
+  height: 32px; width: 220px; max-width: 100%; padding: 0 10px;
+  border: 0; border-radius: 8px; outline: none;
+  background: var(--app-panel); color: var(--app-ink);
+  box-shadow: inset 0 0 0 1px var(--app-line-strong);
+  font: inherit; font-size: 14px;
+}
+.set-name input:focus, .set-input:focus { box-shadow: inset 0 0 0 1px var(--app-muted); }
+.set-seg button { display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 0 10px; font-size: 13px; }
+.set-cta { height: 28px; padding: 0 12px; }
+.set-pill {
+  font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 999px;
+  background: var(--app-active); color: var(--app-active-ink);
+}
+.set-note { margin: 10px 2px 0; font-size: 12px; line-height: 16px; color: var(--app-quiet); }
+.set-warn { color: var(--app-warn) !important; }
+.set-banner { margin: 0 2px 16px; font-size: 13px; }
+.set-danger-ghost { color: var(--app-warn); }
+.set-danger-ghost:hover { color: var(--app-warn); }
+.set-delete { max-width: 440px; }
+.set-delete p strong { color: var(--app-ink); font-weight: 510; overflow-wrap: anywhere; }
+.set-delete .set-input { width: 100%; margin-top: 16px; height: 36px; }
+.set-delete .set-warn { margin-top: 10px; font-size: 13px; }
+.app-cta.set-danger { background: #d4483b; color: #fff; }
+
+@media (max-width: 639px) {
+  .set-row:not(.set-me) { flex-wrap: wrap; row-gap: 10px; }
+  .set-row .app-row-main { min-width: 55%; }
+  .set-row .set-control.set-name { width: 100%; }
+  .set-name input { flex: 1; width: auto; }
+}

@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Set this to true to enable maintenance mode
-const MAINTENANCE_MODE = false;
+// Testing mode: set MAINTENANCE_MODE=on and MAINTENANCE_PASSWORD in the
+// environment. The code is never in the source.
+const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'on';
 
-// Your secret password - CHANGE THIS!
-const MAINTENANCE_PASSWORD = 'stride-testing-2024';
+async function sha256(text: string) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Skip middleware for API routes, static files, and auth callbacks
   if (
     request.nextUrl.pathname.startsWith('/api') ||
@@ -23,10 +26,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if user has the bypass cookie
+  // Check if user has the bypass cookie (a hash of the access code)
+  const code = process.env.MAINTENANCE_PASSWORD;
   const bypassCookie = request.cookies.get('maintenance-bypass');
-  
-  if (bypassCookie?.value === MAINTENANCE_PASSWORD) {
+  if (code && bypassCookie?.value === (await sha256(code))) {
     return NextResponse.next();
   }
 

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../../lib/supabase'; // server-only client; the public key is never used server-side
 import { calculateABTestStats } from '../../../../lib/ab-testing';
+import { getCurrentUser } from '../../../../lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    // signed-in only, and only ever your own nudges
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = user.id;
 
     let query = supabase
       .from('interventions')
@@ -21,9 +24,7 @@ export async function GET(request: NextRequest) {
       .not('variant_type', 'is', null)
       .not('timing_offset', 'is', null);
 
-    if (userId) {
-      query = query.eq('sessions.user_id', userId);
-    }
+    query = query.eq('sessions.user_id', userId);
 
     const { data: interventions, error } = await query;
 

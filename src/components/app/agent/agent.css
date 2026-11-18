@@ -1,0 +1,91 @@
+/* =====================================================================
+   Agent chat. The empty state (heading, composer, example cards) lives in
+   globals.css; this is the thread, history menu and streaming bits.
+   ===================================================================== */
+.agent-card[data-active="true"] { background: var(--app-raised); box-shadow: inset 0 0 0 1px var(--app-line-strong); }
+
+/* header: chat history */
+.agent-history { position: relative; min-width: 0; }
+.agent-history .app-bar-title { max-width: min(440px, 60vw); }
+.agent-history-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agent-history-menu { top: calc(100% + 6px); left: -8px; width: 300px; }
+.agent-history-list { max-height: min(60vh, 420px); overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.agent-history-row { position: relative; }
+.agent-history-row .app-menu-item { padding-right: 34px; }
+.agent-history-row[data-active="true"] .app-menu-item { background: var(--app-active); color: var(--app-ink); }
+.agent-history-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.agent-history-when { flex-shrink: 0; font-size: 12px; color: var(--app-quiet); }
+.agent-history-del {
+  position: absolute; top: 50%; right: 2px; width: 26px; height: 26px; transform: translateY(-50%);
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.agent-history-row:hover .agent-history-del, .agent-history-del:focus-visible { opacity: 1; }
+.agent-history-row:hover .agent-history-when { visibility: hidden; }
+@media (hover: none) {
+  .agent-history-del { opacity: 1; }
+  .agent-history-when { display: none; }
+}
+
+/* layout */
+.agent-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.agent-thread { flex: 1; min-height: 0; overflow-y: auto; }
+.agent-thread-col { max-width: 680px; margin: 0 auto; padding: 36px 20px 28px; display: flex; flex-direction: column; gap: 28px; }
+.agent-dock { flex-shrink: 0; padding: 0 20px calc(16px + env(safe-area-inset-bottom)); }
+.agent-dock .agent-composer { max-width: 680px; margin: 0 auto; }
+.agent-composer[data-docked="true"] textarea { min-height: 22px; }
+.agent-composer[data-docked="true"] .app-composer-row { margin-top: 8px; }
+.app-chip-menu[data-up="true"] { top: auto; bottom: calc(100% + 6px); }
+@media (max-width: 767px) {
+  /* the page doesn't scroll on phones here: the thread does, so the reply box stays on screen */
+  .agent-chat { flex: none; height: calc(100dvh - 48px - env(safe-area-inset-top)); }
+  .agent-thread-col { padding: 24px 16px 20px; gap: 24px; }
+  .agent-dock { padding: 0 12px calc(12px + env(safe-area-inset-bottom)); }
+}
+
+/* turns */
+.agent-user { display: flex; justify-content: flex-end; }
+.agent-user p {
+  margin: 0; max-width: 82%; padding: 10px 14px;
+  border-radius: 16px 16px 6px 16px;
+  background: var(--app-raised); box-shadow: inset 0 0 0 1px var(--app-line);
+  font-size: 15px; line-height: 22px; color: var(--app-ink);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.agent-answer { display: flex; flex-direction: column; gap: 10px; }
+
+.agent-tools { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.agent-tools li { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: var(--app-quiet); }
+.agent-tool-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--app-line-strong); flex-shrink: 0; }
+.agent-tools li[data-active="true"] { color: var(--app-muted); }
+.agent-tools li[data-active="true"] .agent-tool-dot { background: var(--app-active-ink); animation: agent-pulse 1.1s ease-in-out infinite; }
+@keyframes agent-pulse { 50% { opacity: 0.35; transform: scale(0.8); } }
+
+.agent-md { font-size: 15px; line-height: 24px; color: var(--app-ink); overflow-wrap: anywhere; }
+.agent-md > :first-child { margin-top: 0; }
+.agent-md > :last-child { margin-bottom: 0; }
+.agent-md p { margin: 0 0 12px; }
+.agent-md .md-h { font-weight: 600; margin-top: 18px; }
+.agent-md ul, .agent-md ol { margin: 0 0 12px; padding-left: 22px; }
+.agent-md ul { list-style: disc; }
+.agent-md ol { list-style: decimal; }
+.agent-md li { margin: 4px 0; padding-left: 2px; }
+.agent-md li::marker { color: var(--app-quiet); }
+.agent-md strong { font-weight: 600; }
+.agent-md code {
+  padding: 1px 5px; border-radius: 5px; background: var(--app-hover);
+  font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.88em;
+}
+.agent-thinking { display: flex; gap: 5px; padding: 8px 0; }
+.agent-thinking span { width: 6px; height: 6px; border-radius: 999px; background: var(--app-quiet); animation: agent-pulse 1.1s ease-in-out infinite; }
+.agent-thinking span:nth-child(2) { animation-delay: 0.15s; }
+.agent-thinking span:nth-child(3) { animation-delay: 0.3s; }
+
+.agent-error { margin: 0; font-size: 13px; line-height: 18px; color: var(--app-warn); }
+.agent-error button { padding: 0; border: 0; background: none; font: inherit; font-weight: 510; color: var(--app-ink); text-decoration: underline; cursor: pointer; }
+.agent-error-solo { margin-top: 12px; text-align: center; }
+.agent-loading { display: flex; flex-direction: column; gap: 12px; }
+.agent-loading .app-skel { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-thinking span, .agent-tools li[data-active="true"] .agent-tool-dot { animation: none; }
+}

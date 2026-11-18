@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
+import { supabaseAdmin as supabase } from '../../../../lib/supabase'; // server-only client; the public key is never used server-side
 import { z } from 'zod';
 import { getCurrentUser } from '../../../../lib/auth';
 

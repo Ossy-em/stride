@@ -1,0 +1,18 @@
+/* 404 on the app tokens: one quiet line with a divider, centred */
+.nf {
+  min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  padding: 24px 16px; background: var(--app-ground); color: var(--app-ink);
+}
+.nf-line { display: flex; align-items: center; gap: 20px; }
+.nf-line h1 {
+  margin: 0; font-size: 24px; line-height: 32px; font-weight: 590; letter-spacing: -0.02em;
+  color: var(--app-ink); font-variant-numeric: tabular-nums;
+}
+.nf-rule { width: 1px; align-self: stretch; background: var(--app-line-strong); }
+.nf-line p { margin: 0; max-width: 22em; font-size: 14px; line-height: 20px; color: var(--app-muted); }
+.nf-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.nf-btn { height: 36px; padding: 0 16px; font-size: 13px; }
+@media (max-width: 520px) {
+  .nf-line { flex-direction: column; gap: 8px; text-align: center; }
+  .nf-rule { display: none; }
+}

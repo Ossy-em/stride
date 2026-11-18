@@ -48,8 +48,8 @@ export interface Intervention {
   minute_mark?: number;
 }
 
-// DASHBOARD API RESPONSE
-export interface DashboardResponse {
+// HOME API RESPONSE (/api/home)
+export interface HomeResponse {
 
   user: {
     firstName: string | null;
@@ -180,4 +180,76 @@ export interface DashboardStats {
   weekly_trend: number;
   heatmap_data: HeatmapCell[];
   insights: string[];
+}
+
+/** @deprecated Renamed to HomeResponse (Dashboard is now Home). */
+export type DashboardResponse = HomeResponse;
+
+// SESSIONS PAGE (/api/sessions)
+export type SessionStatus = 'completed' | 'in_progress' | 'unsaved';
+
+export interface SessionHistoryItem {
+  id: string;
+  task: string;
+  taskType: string;
+  plannedMinutes: number;
+  actualMinutes: number | null;
+  focusQuality: number | null; // 1-10
+  distractions: number | null;
+  outcome: string | null;
+  startedAt: string; // ISO, UTC
+  endedAt: string | null;
+  nudges: number;
+  nudgesAccepted: number;
+  status: SessionStatus;
+}
+
+export interface SessionHistoryResponse {
+  range: '7d' | '30d' | 'all';
+  sessions: SessionHistoryItem[];
+}
+
+// ---- Goals ----
+export interface Goal {
+  id: string;
+  title: string;
+  /** null = no target, just tracking time */
+  targetMinutes: number | null;
+  /** YYYY-MM-DD */
+  dueDate: string | null;
+  status: 'active' | 'completed';
+  createdAt: string;
+  completedAt: string | null;
+  /** focus minutes from saved sessions linked to this goal */
+  minutes: number;
+  sessions: number;
+  lastSessionAt: string | null;
+  stepsDone: number;
+  stepsTotal: number;
+}
+
+export interface GoalStep {
+  id: string;
+  title: string;
+  done: boolean;
+  position: number;
+}
+
+export interface GoalDetail {
+  goal: Goal;
+  steps: GoalStep[];
+  /** saved sessions that counted towards this goal, newest first */
+  sessions: { id: string; task: string; startedAt: string; minutes: number; focusQuality: number | null }[];
+}
+
+export interface GoalsResponse {
+  week: {
+    /** null = no weekly target set */
+    targetMinutes: number | null;
+    minutes: number;
+    sessions: number;
+    /** Monday..Sunday in the user's timezone, YYYY-MM-DD */
+    days: { date: string; minutes: number }[];
+  };
+  goals: Goal[];
 }

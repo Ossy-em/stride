@@ -16,24 +16,12 @@ type BaseProps = {
   icon?: React.ReactNode;
   /** Shows a spinner and blocks interaction. */
   loading?: boolean;
-  /** Suppress the hover label-swap/arrow (used for icon buttons). */
+  /** No-op since the redesign (there is no hover label swap). */
   noSwap?: boolean;
 };
 
 type ButtonProps = BaseProps &
   Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof BaseProps>;
-
-const Arrow = () => (
-  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="btn-arrow">
-    <path
-      d="M3 8h10m-4-4 4 4-4 4"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 const Spinner = () => (
   <svg className="btn-spinner" viewBox="0 0 24 24" aria-hidden="true">
@@ -67,32 +55,23 @@ export const Button = React.forwardRef<HTMLElement, ButtonProps>(
     },
     ref
   ) => {
-    const simple = Boolean(icon) || loading || noSwap;
+    void noSwap; // kept for API compatibility; the redesign has no label swap
 
     const inner = (
       <>
-        <span className="btn-fill" aria-hidden />
-        <span className="btn-content">
-          {loading ? (
-            <Spinner />
-          ) : icon ? (
-            <span className="btn-icon" aria-hidden>
-              {icon}
-            </span>
-          ) : null}
-          <span className="btn-label">{children}</span>
-        </span>
-        {!simple && (
-          <span className="btn-swap" aria-hidden>
-            <span>{children}</span>
-            <Arrow />
+        {loading ? (
+          <Spinner />
+        ) : icon ? (
+          <span className="btn-icon" aria-hidden>
+            {icon}
           </span>
-        )}
+        ) : null}
+        <span className="btn-label">{children}</span>
       </>
     );
 
     const shared = {
-      className: `btn${simple ? " btn--simple" : ""}${className ? ` ${className}` : ""}`,
+      className: `btn${className ? ` ${className}` : ""}`,
       "data-variant": variant,
       "data-size": size,
     };
@@ -143,115 +122,59 @@ Button.displayName = "Button";
 export function ButtonStyles() {
   return (
     <style>{`
+      /* Linear-style pills: flat fills, hairline edges, quick quiet hovers */
       .btn {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         border-radius: 999px;
-        border: 0.5px solid transparent;
-        font-family: 'Geist', system-ui, -apple-system, sans-serif;
-        font-weight: 500;
+        border: 1px solid var(--btn-border);
+        background: var(--btn-bg);
+        color: var(--btn-fg);
+        font-family: var(--font-geist-sans), 'Geist', system-ui, -apple-system, sans-serif;
+        font-weight: 510;
+        letter-spacing: -0.01em;
         line-height: 1;
         text-decoration: none;
         white-space: nowrap;
         cursor: pointer;
-        isolation: isolate;
+        transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
       }
-      .btn:focus-visible { outline: 2px solid var(--btn-focus); outline-offset: 3px; }
+      .btn:hover:not(:disabled) { background: var(--btn-bg-hover); border-color: var(--btn-border-hover); }
+      .btn:active:not(:disabled) { transform: scale(0.98); }
+      .btn:focus-visible { outline: 2px solid var(--btn-focus); outline-offset: 2px; }
       .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-      .btn[data-size="sm"] { padding: 11px 20px; font-size: 13px; }
-      .btn[data-size="md"] { padding: 13px 26px; font-size: 14px; }
+      .btn[data-size="sm"] { height: 32px; padding: 0 14px; font-size: 13px; }
+      .btn[data-size="md"] { height: 40px; padding: 0 18px; font-size: 14px; }
 
-      .btn[data-variant="solid"] {
-        --btn-bg: #10221c; --btn-fg: #f0f0ec;
-        --btn-fill: #f0f0ec; --btn-fill-fg: #10221c;
-        --btn-border: transparent; --btn-focus: #10221c;
-      }
-      .btn[data-variant="outline"] {
-        --btn-bg: transparent; --btn-fg: #10221c;
-        --btn-fill: #10221c; --btn-fill-fg: #f0f0ec;
-        --btn-border: #dfe4e0; --btn-focus: #10221c;
+      /* on dark grounds */
+      .btn[data-variant="solidLight"] {
+        --btn-bg: #e6e7e8; --btn-bg-hover: #ffffff; --btn-fg: #08090a;
+        --btn-border: transparent; --btn-border-hover: transparent; --btn-focus: #6fdc9c;
       }
       .btn[data-variant="outlineLight"] {
-        --btn-bg: transparent; --btn-fg: #f0f0ec;
-        --btn-fill: #f0f0ec; --btn-fill-fg: #10221c;
-        --btn-border: rgba(240, 240, 236, 0.32); --btn-focus: #f0f0ec;
+        --btn-bg: rgba(255, 255, 255, 0.04); --btn-bg-hover: rgba(255, 255, 255, 0.08); --btn-fg: #f7f8f8;
+        --btn-border: rgba(255, 255, 255, 0.1); --btn-border-hover: rgba(255, 255, 255, 0.18); --btn-focus: #6fdc9c;
+        border-top-color: rgba(255, 255, 255, 0.16);
       }
-      /* filled light pill for dark surfaces (product primary actions) */
-      .btn[data-variant="solidLight"] {
-        --btn-bg: #f0f0ec; --btn-fg: #10221c;
-        --btn-fill: #10221c; --btn-fill-fg: #f0f0ec;
-        --btn-border: transparent; --btn-focus: #f0f0ec;
+      /* on light grounds */
+      .btn[data-variant="solid"] {
+        --btn-bg: #08090a; --btn-bg-hover: #1f2023; --btn-fg: #f7f8f8;
+        --btn-border: transparent; --btn-border-hover: transparent; --btn-focus: #08090a;
       }
-
-      .btn {
-        background: var(--btn-bg);
-        color: var(--btn-fg);
-        border-color: var(--btn-border);
+      .btn[data-variant="outline"] {
+        --btn-bg: transparent; --btn-bg-hover: rgba(0, 0, 0, 0.04); --btn-fg: #08090a;
+        --btn-border: rgba(0, 0, 0, 0.12); --btn-border-hover: rgba(0, 0, 0, 0.2); --btn-focus: #08090a;
       }
 
-      .btn-fill {
-        position: absolute; left: 0; top: 50%;
-        width: 0; height: 0; z-index: 0;
-        border-radius: 999px; background: var(--btn-fill);
-        transform: translate(-50%, -50%) scale(1);
-        transition: left 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                    top 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                    width 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                    height 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
-      }
-      .btn:hover:not(:disabled) .btn-fill,
-      .btn:focus-visible:not(:disabled) .btn-fill {
-        left: 0; top: 0; width: 100%; height: 100%;
-        transform: translate(0, 0) scale(1.6);
-      }
-
-      .btn-content {
-        position: relative; z-index: 1;
-        display: inline-flex; align-items: center; gap: 8px;
-        transition: transform 300ms ease, opacity 260ms ease, color 260ms ease;
-      }
       .btn-icon { display: inline-flex; }
       .btn-icon svg { width: 16px; height: 16px; display: block; }
       .btn-label { display: inline-block; }
-
-      /* plain text buttons: label slides out, swap slides in */
-      .btn:not(.btn--simple):hover .btn-content,
-      .btn:not(.btn--simple):focus-visible .btn-content {
-        transform: translateX(38%); opacity: 0;
-      }
-      /* icon/loading buttons: no swap; content recolours as the fill sweeps */
-      .btn--simple:hover:not(:disabled) .btn-content,
-      .btn--simple:focus-visible:not(:disabled) .btn-content {
-        color: var(--btn-fill-fg);
-      }
-
-      .btn-swap {
-        position: absolute; inset: 0; z-index: 1;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        color: var(--btn-fill-fg);
-        transform: translateX(34%); opacity: 0;
-        transition: transform 300ms ease, opacity 260ms ease;
-      }
-      .btn:hover .btn-swap, .btn:focus-visible .btn-swap {
-        transform: translateX(0); opacity: 1;
-      }
-      .btn-arrow { width: 16px; height: 16px; flex-shrink: 0; }
-
       .btn-spinner { width: 16px; height: 16px; animation: btn-spin 0.7s linear infinite; }
       @keyframes btn-spin { to { transform: rotate(360deg); } }
 
-      .btn:active:not(:disabled) { transform: translateY(1px); }
-
       @media (prefers-reduced-motion: reduce) {
-        .btn-fill, .btn-content, .btn-swap { transition: none; }
-        .btn:hover .btn-content, .btn:focus-visible .btn-content { transform: none; }
-        .btn:hover .btn-swap, .btn:focus-visible .btn-swap { transform: none; }
-        .btn:active { transform: none; }
+        .btn { transition: none; }
+        .btn:active:not(:disabled) { transform: none; }
         .btn-spinner { animation: none; }
       }
     `}</style>

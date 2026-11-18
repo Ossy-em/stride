@@ -15,15 +15,20 @@ export const anthropic = new Anthropic({
 export async function callClaude(
   prompt: string,
   systemPrompt?: string,
-  model: string = 'claude-3-haiku-20240307',
-  metadata?: Record<string, any> 
+  model: string = 'claude-sonnet-5',
+  metadata?: Record<string, any>
 ) {
   const startTime = Date.now();
 
   try {
+    // Sonnet 5 runs adaptive thinking when `thinking` is omitted; low effort keeps
+    // these short JSON calls fast. max_tokens covers thinking + answer (and the
+    // Sonnet 5 tokenizer counts ~30% more tokens than earlier models).
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 1024,
+      max_tokens: 4096,
+      thinking: { type: 'adaptive' },
+      output_config: { effort: 'low' },
       system: systemPrompt,
       messages: [
         {
@@ -56,6 +61,7 @@ export async function callClaude(
         ...metadata,
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,
+        stop_reason: response.stop_reason, // 'max_tokens' / 'refusal' mean truncated or empty output
       },
       tags: metadata?.tags || [],
     });

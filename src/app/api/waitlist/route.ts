@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabase'; // Use admin client
 import { Resend } from 'resend';
+import { clientIp, esc, rateLimit } from '../../../lib/security';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Received request to /waitlist');
+    if (!rateLimit(`waitlist:${clientIp(request)}`, 5, 60 * 60e3)) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+    }
 
     const { email } = await request.json();
-    console.log('Request body email:', email);
 
     if (!email || typeof email !== 'string') {
       console.warn('Email missing or invalid type');
@@ -17,8 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.warn('Email format invalid:', email);
+    if (email.length > 254 || !emailRegex.test(email)) {
+      
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    console.log('Supabase insert result:', insertData, insertError);
+    
 
     if (insertError) {
       if (insertError.code === '23505') {
@@ -62,10 +64,10 @@ export async function POST(request: NextRequest) {
   subject: `New waitlist signup (#${count})`,
   html: `
     <div style="font-family: 'Inter', sans-serif; background-color: #1a1a1a; color: #ffffff; padding: 30px; border-radius: 12px;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #0f1a15; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #0f1011; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
         <h1 style="color: #84cc16; font-size: 24px; margin-bottom: 20px;">New Stride Signup!</h1>
         <p style="font-size: 16px; margin: 10px 0;">
-          <strong>Email:</strong> <span style="color: #84cc16;">${normalizedEmail}</span>
+          <strong>Email:</strong> <span style="color: #84cc16;">${esc(normalizedEmail)}</span>
         </p>
         <p style="font-size: 16px; margin: 10px 0;">
           <strong>Total signups:</strong> <span style="color: #84cc16;">${count}</span>
@@ -82,13 +84,13 @@ export async function POST(request: NextRequest) {
   `,
 });
 
-      console.log('Resend email sent successfully:', emailResponse);
+      
     } catch (resendError) {
       console.error('Resend email failed:', resendError);
       // Don't throw - user is already added to waitlist
     }
 
-    console.log("Waitlist process completed successfully for email:", normalizedEmail);
+    
 
     return NextResponse.json({ success: true, message: "You're on the list!" });
   } catch (error) {

@@ -20,14 +20,14 @@ export default function StrideFooter() {
         .ft {
           width: 100%;
           box-sizing: border-box;
-          background: var(--field-1);
-          border-radius: 32px 32px 0 0;
+          background: transparent;
           overflow: hidden;
           padding: 36px var(--gutter) 18px;
           font-family: var(--font-sans);
         }
 
-        /* ---- columns ---- */
+        /* ---- columns: on the same content column as every section ---- */
+        .ft-cols, .ft-base { max-width: var(--maxw); margin-left: auto; margin-right: auto; }
         .ft-cols {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -37,25 +37,25 @@ export default function StrideFooter() {
         .ft-col-head {
           margin: 0 0 var(--s-4);
           font-size: var(--fs-sm);
-          font-weight: var(--fw-semibold);
-          line-height: 1.3;
+          font-weight: var(--fw-heading);
+          line-height: var(--lh-sm);
           color: var(--on-dark);
         }
         .ft-statement {
           margin: 0 0 var(--s-3);
           font-size: var(--fs-sm);
           font-weight: var(--fw-regular);
-          line-height: 1.45;
+          line-height: var(--lh-sm);
           color: var(--on-dark-body);
           max-width: 26ch;
         }
         .ft-statement:last-child { margin-bottom: 0; }
 
-        .ft-list { display: flex; flex-direction: column; gap: 9px; }
+        .ft-list { display: flex; flex-direction: column; gap: 8px; }
         .ft-link {
           font-size: var(--fs-sm);
           font-weight: var(--fw-regular);
-          line-height: 1.3;
+          line-height: var(--lh-sm);
           color: var(--on-dark-body);
           text-decoration: none;
           width: fit-content;
@@ -68,15 +68,16 @@ export default function StrideFooter() {
           border-radius: 2px;
         }
 
-        /* ---- wordmark: flush left, fills the measure ---- */
+        /* ---- wordmark: centred, fills the measure ---- */
         .ft-mark {
           display: block;
           margin: 0 0 -0.05em;
-          font-family: var(--font-serif);
-          font-weight: 700;
+          text-align: center;
+          font-family: var(--font-sans);
+          font-weight: 600;
           font-size: clamp(80px, 30vw, 470px);
           line-height: 0.74;
-          letter-spacing: -0.05em;
+          letter-spacing: -0.065em;
           white-space: nowrap;
           color: var(--on-dark);
           user-select: none;
@@ -86,21 +87,20 @@ export default function StrideFooter() {
         .ft-base {
           text-align: center;
           padding-top: var(--s-4);
-          border-top: 0.5px solid var(--on-dark-rule);
+          box-shadow: inset 0 var(--hair) 0 var(--hair-color);
           margin-top: var(--s-5);
         }
         .ft-base p {
           margin: 0;
           font-size: var(--fs-xs);
           font-weight: var(--fw-regular);
-          line-height: 1.6;
+          line-height: var(--lh-xs);
           color: var(--on-dark-quiet);
         }
 
         @media (min-width: 768px) {
           .ft {
-            border-radius: var(--radius-panel) var(--radius-panel) 0 0;
-            padding: 44px var(--gutter) 20px;
+            padding: var(--head-gap) var(--gutter) 20px;
           }
           .ft-cols {
             grid-template-columns: 1.4fr 1fr 1fr 1.3fr;
@@ -159,7 +159,7 @@ export default function StrideFooter() {
       </div>
 
       <span className="ft-mark" aria-hidden>
-        stride
+        Stride
       </span>
 
       <div className="ft-base">

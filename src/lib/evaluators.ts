@@ -41,7 +41,7 @@ Return ONLY a single number from 1-10. No explanation.`;
     const response = await callClaude(
       prompt,
       'You are an expert evaluator of AI-generated content. Be critical but fair.',
-      'claude-3-haiku-20240307',
+      'claude-sonnet-5',
       {
         callType: 'insight_quality_evaluation',
         tags: ['evaluation', 'llm-as-judge'],
@@ -139,7 +139,7 @@ Return ONLY valid JSON (no markdown):
     const response = await callClaude(
       prompt,
       'You are an expert evaluator. Be critical but fair. Consider that user response affects quality.',
-      'claude-3-haiku-20240307',
+      'claude-sonnet-5',
       {
         callType: 'intervention_quality_evaluation',
         userId,

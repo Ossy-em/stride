@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { clientIp, rateLimit, safeEqual } from '../../../../lib/security';
 
 // Use service role for admin access
 const supabaseAdmin = createClient(
@@ -7,14 +8,17 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Simple password protection
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'stride-admin-2024';
+// Password comes only from the environment. No fallback: if ADMIN_PASSWORD
+// isn't set, the admin API is simply off.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function GET(request: NextRequest) {
   try {
-    // Check password from header
-    const password = request.headers.get('x-admin-password');
-    if (password !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD) return NextResponse.json({ error: 'Not available' }, { status: 404 });
+    if (!rateLimit(`admin:${clientIp(request)}`, 10, 15 * 60e3)) {
+      return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
+    }
+    if (!safeEqual(request.headers.get('x-admin-password'), ADMIN_PASSWORD)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

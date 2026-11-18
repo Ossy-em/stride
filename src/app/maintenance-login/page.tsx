@@ -1,8 +1,11 @@
 'use client';
 
+/** Testing-mode gate, on the sign-in layout and app tokens (light / dark). Copy unchanged. */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { Logo } from '@/components/ui/logo';
+import ThemeScript from '@/components/app/theme-script';
+import '@/components/auth/auth.css';
 
 export default function MaintenanceLogin() {
   const router = useRouter();
@@ -23,13 +26,12 @@ export default function MaintenanceLogin() {
       });
 
       if (res.ok) {
-        // Password correct - redirect to dashboard
-        router.push('/dashboard');
+        router.push('/home');
         router.refresh();
       } else {
         setError('Incorrect password');
       }
-    } catch (err) {
+    } catch {
       setError('Something went wrong');
     } finally {
       setLoading(false);
@@ -37,63 +39,45 @@ export default function MaintenanceLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <Image 
-              src="/icons/icon.png" 
-              alt="Stride" 
-              width={80}
-              height={80}
-              className="w-20 h-20"
-            />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            We're Testing Something New
-          </h1>
-          <p className="text-gray-500">
-            Stride is currently in testing mode. We'll be back soon!
-          </p>
-        </div>
+    <>
+      <ThemeScript />
+      <div className="app">
+        <main className="auth">
+          <div className="auth-col">
+            <span className="auth-mark" aria-label="Stride">
+              <Logo size={26} />
+            </span>
+            <h1 className="auth-title" style={{ marginBottom: 8 }}>We&apos;re Testing Something New</h1>
+            <p className="auth-sent" style={{ marginBottom: 28 }}>
+              Stride is currently in testing mode. We&apos;ll be back soon!
+            </p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Testing Access Code
-              </label>
+            <form className="auth-buttons" onSubmit={handleSubmit}>
               <input
-                id="password"
+                className="auth-input"
                 type="password"
+                aria-label="Testing Access Code"
+                placeholder="Enter access code"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 transition-all"
-                placeholder="Enter access code"
                 autoFocus
               />
-              {error && (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-              )}
-            </div>
+              <button type="submit" className="auth-btn auth-btn--primary" disabled={loading || !password}>
+                {loading ? 'Checking...' : 'Access Testing'}
+              </button>
+            </form>
+            {error && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
 
-            <button
-              type="submit"
-              disabled={loading || !password}
-              className="w-full px-6 py-3 bg-lime-400 text-[#1a3a2f] font-semibold rounded-xl hover:bg-lime-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Checking...' : 'Access Testing'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Want early access?{' '}
-          <a href="mailto:hello@stride.app" className="text-lime-600 hover:text-lime-700 font-medium">
-            Get in touch
-          </a>
-        </p>
+            <p className="auth-legal">
+              Want early access? <a href="mailto:hello@stride.app">Get in touch</a>
+            </p>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }
