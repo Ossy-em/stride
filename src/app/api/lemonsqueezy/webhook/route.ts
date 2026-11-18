@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { Resend } from 'resend';
 import crypto from 'crypto';
+import { esc } from '../../../../lib/security';
 
 const WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET!;
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
+    if (!WEBHOOK_SECRET) {
+      console.error('LEMONSQUEEZY_WEBHOOK_SECRET is not set');
+      return NextResponse.json({ error: 'Not configured' }, { status: 500 });
+    }
     const rawBody = await request.text();
 
     // Verify webhook signature
@@ -22,9 +27,11 @@ export async function POST(request: NextRequest) {
       .update(rawBody)
       .digest('hex');
 
-    if (hmac !== signature) {
+    const a = Buffer.from(hmac, 'utf8');
+    const b = Buffer.from(signature, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       console.error('Invalid webhook signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const event = JSON.parse(rawBody);
@@ -44,8 +51,15 @@ export async function POST(request: NextRequest) {
         break;
       }
       case 'subscription_cancelled': {
-        // Subscription cancelled but still active until end of period
-        console.log('Subscription cancelled, will expire at end of period');
+        // Still premium until ends_at; saving the date lets the app end it on time
+        // even if the expiry webhook never arrives.
+        await handleSubscriptionUpdated(event.data, userId);
+        break;
+      }
+      case 'subscription_paused':
+      case 'subscription_unpaused':
+      case 'subscription_resumed': {
+        await handleSubscriptionUpdated(event.data, userId);
         break;
       }
       case 'subscription_expired': {
@@ -66,9 +80,38 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error: any) {
+    // A 500 makes Lemon Squeezy retry, so a failed downgrade isn't lost.
     console.error('Webhook error:', error);
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ error: 'Failed to process' }, { status: 500 });
   }
+}
+
+/**
+ * Write billing fields to the right user: by the signed user_id from checkout,
+ * falling back to the (lowercased) email. Throws so the webhook gets retried.
+ * onlySub: only touch the row if it's still on this subscription, so an old
+ * subscription expiring can't downgrade someone who has since resubscribed.
+ */
+async function updateUser(
+  update: Record<string, any>,
+  userId: string | undefined,
+  email: string | undefined,
+  onlySub?: string
+) {
+  const run = async (col: 'id' | 'email', val: string, withEndsAt = true) => {
+    const data = withEndsAt ? update : Object.fromEntries(Object.entries(update).filter(([k]) => k !== 'ls_ends_at'));
+    let q = supabaseAdmin.from('users').update(data).eq(col, val);
+    if (onlySub) q = q.or(`ls_subscription_id.is.null,ls_subscription_id.eq.${onlySub}`);
+    let res = await q.select('id');
+    // before add-billing-expiry.sql runs, ls_ends_at doesn't exist yet
+    if (res.error && withEndsAt && /ls_ends_at/.test(res.error.message || '')) return run(col, val, false);
+    if (res.error) throw res.error;
+    return res.data?.length || 0;
+  };
+  let n = 0;
+  if (userId) n = await run('id', userId);
+  if (!n && email) n = await run('email', String(email).trim().toLowerCase());
+  return n;
 }
 
 async function handleSubscriptionCreated(data: any, userId: string | undefined) {
@@ -91,26 +134,12 @@ async function handleSubscriptionCreated(data: any, userId: string | undefined) 
     ls_plan_type: planType,
     ls_status: status,
     ls_renews_at: attrs.renews_at,
+    ls_ends_at: attrs.ends_at ?? null,
   };
 
-  // Update by user ID first, then by email
-  let result;
-  if (userId) {
-    result = await supabaseAdmin
-      .from('users')
-      .update(updateData)
-      .eq('id', userId);
-  }
-
-  if (!result || result.error) {
-    result = await supabaseAdmin
-      .from('users')
-      .update(updateData)
-      .eq('email', email);
-  }
-
-  if (result.error) {
-    console.error('Failed to update user:', result.error);
+  const updated = await updateUser(updateData, userId, email);
+  if (!updated) {
+    console.error(`No Stride user found for subscription ${subscriptionId} (${email})`);
     return;
   }
 
@@ -125,10 +154,10 @@ async function handleSubscriptionCreated(data: any, userId: string | undefined) 
       html: `
         <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
           <h2 style="color: #1a3a2f;">New Premium Subscriber!</h2>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Plan:</strong> ${planType}</p>
-          <p><strong>Status:</strong> ${status}</p>
-          <p><strong>Subscription ID:</strong> ${subscriptionId}</p>
+          <p><strong>Email:</strong> ${esc(email)}</p>
+          <p><strong>Plan:</strong> ${esc(planType)}</p>
+          <p><strong>Status:</strong> ${esc(status)}</p>
+          <p><strong>Subscription ID:</strong> ${esc(subscriptionId)}</p>
           <p style="color: #888; font-size: 13px;">${new Date().toLocaleString()}</p>
         </div>
       `,
@@ -144,28 +173,27 @@ async function handleSubscriptionUpdated(data: any, userId: string | undefined) 
   const status = attrs.status;
   const subscriptionId = String(data.id);
 
-  // If status changed to 'expired' or 'cancelled', downgrade
-  if (status === 'expired' || status === 'unpaid') {
+  // Ended, unpaid or paused: back to free now
+  if (status === 'expired' || status === 'unpaid' || status === 'paused') {
     await downgradeUser(email, userId, subscriptionId, status);
     return;
   }
 
-  // Otherwise update the status
+  // Otherwise keep the dates and status current (cancelled keeps premium until ends_at)
   const updateData: Record<string, any> = {
     ls_status: status,
     ls_renews_at: attrs.renews_at,
+    ls_ends_at: attrs.ends_at ?? null,
   };
 
-  // If reactivated, ensure premium
-  if (status === 'active') {
+  // If (re)activated, ensure premium and point the row at this subscription
+  if (status === 'active' || status === 'on_trial') {
     updateData.plan = 'premium';
     updateData.plan_updated_at = new Date().toISOString();
-  }
-
-  if (userId) {
-    await supabaseAdmin.from('users').update(updateData).eq('id', userId);
+    updateData.ls_subscription_id = subscriptionId;
+    await updateUser(updateData, userId, email);
   } else {
-    await supabaseAdmin.from('users').update(updateData).eq('email', email);
+    await updateUser(updateData, userId, email, subscriptionId);
   }
 
   console.log(`🔄 Subscription ${subscriptionId} updated: ${status}`);
@@ -186,12 +214,10 @@ async function downgradeUser(email: string, userId: string | undefined, subscrip
     ls_status: reason,
   };
 
-  let result;
-  if (userId) {
-    result = await supabaseAdmin.from('users').update(updateData).eq('id', userId);
-  }
-  if (!result || result.error) {
-    result = await supabaseAdmin.from('users').update(updateData).eq('email', email);
+  const updated = await updateUser(updateData, userId, email, subscriptionId);
+  if (!updated) {
+    console.log(`Subscription ${subscriptionId} ${reason}, but the user is on a newer subscription; left as is`);
+    return;
   }
 
   console.log(`⬇️ User ${email} downgraded to free (${reason})`);
@@ -204,8 +230,8 @@ async function downgradeUser(email: string, userId: string | undefined, subscrip
       html: `
         <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
           <h2 style="color: #1a3a2f;">Subscription ${reason}</h2>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Subscription:</strong> ${subscriptionId}</p>
+          <p><strong>Email:</strong> ${esc(email)}</p>
+          <p><strong>Subscription:</strong> ${esc(subscriptionId)}</p>
           <p style="color: #888; font-size: 13px;">${new Date().toLocaleString()}</p>
         </div>
       `,
@@ -229,7 +255,7 @@ async function handlePaymentFailed(data: any, userId: string | undefined) {
       html: `
         <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
           <h2 style="color: #1a3a2f;">Payment Failed</h2>
-          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Email:</strong> ${esc(email)}</p>
           <p>User may need to update their payment method.</p>
           <p style="color: #888; font-size: 13px;">${new Date().toLocaleString()}</p>
         </div>

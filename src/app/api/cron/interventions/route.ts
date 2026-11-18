@@ -4,13 +4,16 @@ import { checkInterventionNeeded } from '../../../../lib/prediction-service';
 import { generateIntervention } from '../../../../lib/ai-service';
 import { sendPushNotification } from '../../../../lib/push-service';
 import { getLimitsByPlan } from '../../../../lib/plans';
+import { safeEqual } from '../../../../lib/security';
 
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized access
-  const secret = request.nextUrl.searchParams.get('secret');
-  if (secret !== process.env.CRON_SECRET) {
+  // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>"; ?secret= still works for external pingers
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || null;
+  const secret = bearer || request.nextUrl.searchParams.get('secret');
+  if (!safeEqual(secret, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     if (sessionsError) {
       console.error('❌ Error fetching active sessions:', sessionsError);
-      return NextResponse.json({ error: sessionsError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
     }
 
     if (!activeSessions || activeSessions.length === 0) {
@@ -220,7 +223,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Cron error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
 

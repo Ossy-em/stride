@@ -7,9 +7,9 @@ import { getCurrentUser } from '../../../../lib/auth';
 
 const endSessionSchema = z.object({
   sessionId: z.string().uuid(),
-  actualDuration: z.number().min(1),
+  actualDuration: z.number().min(1).max(600),
   focusQuality: z.number().min(1).max(10),
-  distractionCount: z.number().min(0),
+  distractionCount: z.number().int().min(0).max(1000),
   outcome: z.string().max(500).optional(),
 });
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Verify session ownership
     const { data: session } = await supabaseAdmin
       .from('sessions')
-      .select('user_id')
+      .select('user_id, ended_at, focus_quality, actual_duration')
       .eq('id', validatedData.sessionId)
       .single();
 
@@ -39,6 +39,16 @@ export async function POST(request: NextRequest) {
         { error: 'Forbidden' },
         { status: 403 }
       );
+    }
+
+    // Already ended: don't overwrite it or re-run the AI analysis
+    if (session.ended_at) {
+      return NextResponse.json({
+        message: 'Session already ended',
+        sessionId: validatedData.sessionId,
+        alreadyEnded: true,
+        stats: { focusQuality: session.focus_quality, duration: session.actual_duration, interventions: 0, accepted: 0, dismissed: 0, effective: 0 },
+      });
     }
 
     // Update session with final data
@@ -51,7 +61,8 @@ export async function POST(request: NextRequest) {
         outcome: validatedData.outcome,
         ended_at: new Date().toISOString(),
       })
-      .eq('id', validatedData.sessionId);
+      .eq('id', validatedData.sessionId)
+      .is('ended_at', null);
 
     if (error) {
       console.error('Supabase error:', error);

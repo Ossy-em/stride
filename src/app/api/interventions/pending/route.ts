@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (session?.paused_at) {
+    // not your session (or no such session): nothing to show
+    if (!session || session.paused_at) {
       return NextResponse.json({ pending: false });
     }
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching pending interventions:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
     }
 
     if (!pending || pending.length === 0) {
@@ -54,6 +55,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error in pending interventions route:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

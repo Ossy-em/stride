@@ -1,63 +1,73 @@
 import { supabaseAdmin } from './supabase';
 
-export type UserPlan = 'free' | 'premium';
+import { PLAN_LIMITS, getLimitsByPlan, type PlanLimits, type UserPlan } from './plan-limits';
 
-export interface PlanLimits {
-  maxSessionsPerDay: number;
-  maxSessionDuration: number; // minutes
-  interventionModel: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514';
-  interventionTiming: 'fixed' | 'pattern_based';
-  hasAIInsights: boolean;
-  hasSelfDiscovery: boolean;
-  sessionHistoryDays: number; // -1 for unlimited
-  canPause: boolean;
-  canExport: boolean;
-}
+export type { PlanLimits, UserPlan };
+export { PLAN_LIMITS, getLimitsByPlan };
 
-const PLAN_LIMITS: Record<UserPlan, PlanLimits> = {
-  free: {
-    maxSessionsPerDay: 3,
-    maxSessionDuration: 30,
-    interventionModel: 'claude-3-haiku-20240307',
-    interventionTiming: 'fixed',
-    hasAIInsights: false,
-    hasSelfDiscovery: false,
-    sessionHistoryDays: 7,
-    canPause: false,
-    canExport: false,
-  },
-  premium: {
-    maxSessionsPerDay: -1, // unlimited
-    maxSessionDuration: 180,
-    interventionModel: 'claude-sonnet-4-20250514',
-    interventionTiming: 'pattern_based',
-    hasAIInsights: true,
-    hasSelfDiscovery: true,
-    sessionHistoryDays: -1, // unlimited
-    canPause: true,
-    canExport: true,
-  },
+const GRACE_MS = 3 * 24 * 60 * 60 * 1000; // a renewal that's this late without a webhook = lapsed
+
+type BillingRow = {
+  plan?: string | null;
+  ls_subscription_id?: string | null;
+  ls_status?: string | null;
+  ls_renews_at?: string | null;
+  ls_ends_at?: string | null;
 };
 
-// Get user's plan
+/**
+ * The plan someone should actually have right now. The webhook normally
+ * flips premium back to free, but if Lemon Squeezy's expiry event never
+ * lands, the dates on the subscription still end premium on time.
+ * Premium given by hand (no subscription id) is left alone.
+ */
+export function effectivePlan(u: BillingRow | null | undefined, now = Date.now()): UserPlan {
+  if (u?.plan !== 'premium') return 'free';
+  if (!u.ls_subscription_id) return 'premium';
+  const status = u.ls_status || '';
+  if (['expired', 'unpaid', 'paused'].includes(status)) return 'free';
+  const at = (s?: string | null) => (s ? Date.parse(s) : NaN);
+  if (status === 'cancelled') {
+    const ends = at(u.ls_ends_at ?? u.ls_renews_at);
+    if (!Number.isNaN(ends) && ends <= now) return 'free';
+    return 'premium';
+  }
+  const renews = at(u.ls_renews_at);
+  if (!Number.isNaN(renews) && renews + GRACE_MS <= now) return 'free';
+  return 'premium';
+}
+
+// Get user's plan (expiry-checked; a lapsed premium row is moved back to free)
 export async function getUserPlan(userId: string): Promise<UserPlan> {
-  const { data } = await supabaseAdmin
+  let res = await supabaseAdmin
     .from('users')
-    .select('plan')
+    .select('plan, ls_subscription_id, ls_status, ls_renews_at, ls_ends_at')
     .eq('id', userId)
     .single();
-
-  return (data?.plan as UserPlan) || 'free';
+  // before add-billing-expiry.sql runs, ls_ends_at doesn't exist yet
+  if (res.error && /ls_ends_at/.test(res.error.message || '')) {
+    res = (await supabaseAdmin
+      .from('users')
+      .select('plan, ls_subscription_id, ls_status, ls_renews_at')
+      .eq('id', userId)
+      .single()) as typeof res;
+  }
+  const row = res.data as BillingRow | null;
+  const plan = effectivePlan(row);
+  if (row?.plan === 'premium' && plan === 'free') {
+    await supabaseAdmin
+      .from('users')
+      .update({ plan: 'free', plan_updated_at: new Date().toISOString() })
+      .eq('id', userId)
+      .eq('plan', 'premium');
+    console.log(`⬇️ User ${userId} moved to free: subscription lapsed (${row.ls_status})`);
+  }
+  return plan;
 }
 
 // Get plan limits for a user
 export async function getPlanLimits(userId: string): Promise<PlanLimits> {
   const plan = await getUserPlan(userId);
-  return PLAN_LIMITS[plan];
-}
-
-// Get limits by plan directly (no DB call)
-export function getLimitsByPlan(plan: UserPlan): PlanLimits {
   return PLAN_LIMITS[plan];
 }
 
@@ -141,6 +151,44 @@ export function getStartOfDayInTimezone(timezone?: string): string {
   return utcMidnight.toISOString();
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const validZone = (tz?: string) => {
+  try {
+    if (tz) {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return tz;
+    }
+  } catch {}
+  return null;
+};
+
+/**
+ * The timezone daily limits are counted in. Saved on the user so the browser
+ * can't reset "today" by sending a different zone each request: it can change
+ * at most once every 24 hours (enough for real travel).
+ * Before scripts/add-user-timezone.sql is run, falls back to the client's zone.
+ */
+export async function limitZone(userId: string, clientTz?: string): Promise<string> {
+  const asked = validZone(clientTz);
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('timezone, timezone_updated_at')
+    .eq('id', userId)
+    .single();
+  if (error) return asked || 'UTC';
+
+  const saved = validZone(data?.timezone ?? undefined);
+  const changedAt = data?.timezone_updated_at ? new Date(data.timezone_updated_at).getTime() : 0;
+  if (asked && asked !== saved && (!saved || Date.now() - changedAt >= DAY_MS)) {
+    await supabaseAdmin
+      .from('users')
+      .update({ timezone: asked, timezone_updated_at: new Date().toISOString() })
+      .eq('id', userId);
+    return asked;
+  }
+  return saved || asked || 'UTC';
+}
+
 // Check if user can start a new session today
 // Now accepts optional timezone from the client
 export async function canStartSession(userId: string, timezone?: string): Promise<{
@@ -156,15 +204,16 @@ export async function canStartSession(userId: string, timezone?: string): Promis
     return { allowed: true };
   }
 
-  // Count today's sessions using the user's timezone
-  const startOfToday = getStartOfDayInTimezone(timezone);
+  // Count today's sessions in the user's saved timezone
+  const startOfToday = getStartOfDayInTimezone(await limitZone(userId, timezone));
 
+  // Every session started today counts, finished or not. Counting only
+  // finished ones let a free user start sessions and never end them.
   const { count, error } = await supabaseAdmin
     .from('sessions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .gte('started_at', startOfToday)
-    .not('ended_at', 'is', null); // Only count completed sessions
+    .gte('started_at', startOfToday);
 
   if (error) {
     console.error('Error checking session count:', error);

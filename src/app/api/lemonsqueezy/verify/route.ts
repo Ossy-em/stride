@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '../../../../lib/auth';
-import { supabaseAdmin } from '../../../../lib/supabase';
+import { getUserPlan } from '../../../../lib/plans';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,14 +9,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check user's plan in DB (webhook may have already updated it)
-    const { data: userData } = await supabaseAdmin
-      .from('users')
-      .select('plan, ls_status')
-      .eq('id', user.id)
-      .single();
-
-    if (userData?.plan === 'premium') {
+    // Check user's plan (webhook may have already updated it)
+    if ((await getUserPlan(user.id)) === 'premium') {
       return NextResponse.json({ verified: true, plan: 'premium' });
     }
 
@@ -24,13 +18,7 @@ export async function GET(request: NextRequest) {
     // Wait 2 seconds and check again
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const { data: retryData } = await supabaseAdmin
-      .from('users')
-      .select('plan')
-      .eq('id', user.id)
-      .single();
-
-    if (retryData?.plan === 'premium') {
+    if ((await getUserPlan(user.id)) === 'premium') {
       return NextResponse.json({ verified: true, plan: 'premium' });
     }
 
@@ -42,6 +30,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Verification error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
